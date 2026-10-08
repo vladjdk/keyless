@@ -80,15 +80,16 @@ mod tests {
             assert!(svg.contains("role=\"img\""));
             assert!(svg.ends_with("</svg>\n"));
         }
-        assert!(
-            std::fs::read_to_string(dir.path().join("architecture-dark.svg"))
-                .unwrap()
-                .contains("#0d1117")
-        );
-        assert!(
-            std::fs::read_to_string(dir.path().join("architecture-light.svg"))
-                .unwrap()
-                .contains("#ffffff")
-        );
+        // Brand palette: ink ground and panels in dark, paper ground in light.
+        let dark = std::fs::read_to_string(dir.path().join("architecture-dark.svg")).unwrap();
+        let light = std::fs::read_to_string(dir.path().join("architecture-light.svg")).unwrap();
+        assert!(dark.contains("#0b0b0c") && dark.contains("#18181a"));
+        assert!(light.contains("#f2f1ec"));
+        for old in ["#0d1117", "#ffffff", "#bf3989", "#e86aa6"] {
+            assert!(
+                !dark.contains(old) && !light.contains(old),
+                "legacy colour {old}"
+            );
+        }
     }
 }

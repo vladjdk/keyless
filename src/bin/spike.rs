@@ -1,4 +1,4 @@
-use blindfold::harness::run_once;
+use keyless::harness::run_once;
 #[tokio::main]
 async fn main() {
     match run().await {
@@ -10,17 +10,15 @@ async fn main() {
         }
     }
 }
-async fn run() -> blindfold::Result<bool> {
+async fn run() -> keyless::Result<bool> {
     let chrome = std::env::args()
         .nth(1)
         .or_else(|| std::env::var("CHROME").ok())
         .ok_or_else(|| {
-            blindfold::Error::internal(
-                "usage: cargo run --bin spike -- /path/to/chrome (or CHROME)",
-            )
+            keyless::Error::internal("usage: cargo run --bin spike -- /path/to/chrome (or CHROME)")
         })?;
     if !std::path::Path::new(&chrome).is_file() {
-        return Err(blindfold::Error::internal("Chromium executable not found"));
+        return Err(keyless::Error::internal("Chromium executable not found"));
     }
     let mut results = vec![];
     for proxy in [false, true] {
@@ -61,10 +59,9 @@ async fn run() -> blindfold::Result<bool> {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("spike/results-rust.json");
     std::fs::write(
         path,
-        serde_json::to_vec_pretty(&results)
-            .map_err(|e| blindfold::Error::internal(e.to_string()))?,
+        serde_json::to_vec_pretty(&results).map_err(|e| keyless::Error::internal(e.to_string()))?,
     )
-    .map_err(|e| blindfold::Error::internal(e.to_string()))?;
+    .map_err(|e| keyless::Error::internal(e.to_string()))?;
     let failed = results.iter().any(|r| {
         !r["leaks"].as_array().unwrap().is_empty()
             || r["checks"]

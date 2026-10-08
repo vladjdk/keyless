@@ -1,6 +1,6 @@
-# Blindfold design
+# keyless design
 
-Blindfold specifies a local broker that lets an agent operate an authenticated website through a filtered channel. Credentials and raw browser control remain inside the broker boundary.
+keyless specifies a local broker that lets an agent operate an authenticated website through a filtered channel. Credentials and raw browser control remain inside the broker boundary.
 
 This document specifies the isolated production system. It does not describe an implemented production release. The repository contains a browser-fixture prototype and diagram generator written in Rust. [Prototype measurements](../spike/RESULTS.md) and [tradeoffs and gaps](TRADEOFFS.md) distinguish recorded evidence from requirements.
 

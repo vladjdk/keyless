@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
-    <img src="assets/banner-light.svg" alt="blindfold: sealed browser sessions for AI agents" width="100%">
+    <img src="assets/banner-light.svg" alt="keyless: sealed browser sessions for AI agents" width="100%">
   </picture>
 </p>
 
@@ -13,9 +13,9 @@
   <a href="docs/TRADEOFFS.md">Tradeoffs and gaps</a>
 </p>
 
-# Blindfold
+# keyless
 
-Blindfold is a local browser-session broker for AI agents. Its specified production design keeps credentials and enumerated session secrets behind an isolated service boundary and exposes a filtered page view with restricted actions.
+keyless is a local browser-session broker for AI agents. Its specified production design keeps credentials and enumerated session secrets behind an isolated service boundary and exposes a filtered page view with restricted actions.
 
 Status: pre-alpha prototype. The isolated production broker is not implemented. No independent security audit has been performed. The prototype does not establish protection against an agent with a same-user shell.
 
