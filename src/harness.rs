@@ -2,6 +2,7 @@ use crate::{
     Error, Result,
     broker::{Broker, Credential},
     fixture::{Attacker, BAD, Fixture, GOOD, Proxy, USER},
+    sleep, text,
 };
 use serde_json::{Value, json};
 use std::{
@@ -112,9 +113,6 @@ pub fn scan(messages: &[String], canaries: &[Value]) -> (Vec<Value>, Vec<Value>)
     (leaks, info)
 }
 
-async fn sleep(ms: u64) {
-    tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
-}
 fn check(checks: &mut Vec<Value>, name: impl Into<String>, pass: bool, detail: Value) {
     checks.push(json!({"name":name.into(),"pass":pass,"detail":detail}));
 }
@@ -193,9 +191,6 @@ fn counts(keys: impl Iterator<Item = String>) -> BTreeMap<String, usize> {
         *m.entry(key).or_default() += 1;
     }
     m
-}
-fn text(v: &Value) -> &str {
-    v.as_str().unwrap_or("")
 }
 pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
     let attacker = Attacker::start().map_err(|e| Error::internal(e.to_string()))?;

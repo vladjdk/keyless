@@ -48,12 +48,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64063/app",
+        "detail": "http://localhost:49528/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:64063/invoices",
+        "detail": "http://localhost:49528/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -65,7 +65,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64063/echo",
+        "detail": "http://localhost:49528/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -80,7 +80,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64063/search",
+        "detail": "http://localhost:49528/search",
         "name": "search (GET) works",
         "pass": true
       },
@@ -235,7 +235,7 @@
     },
     "profile": "development",
     "proxy": false,
-    "tapBytes": 30225
+    "tapBytes": 30056
   },
   {
     "axProbe": [
@@ -286,12 +286,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64305/app",
+        "detail": "http://localhost:49801/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:64305/invoices",
+        "detail": "http://localhost:49801/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -303,7 +303,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64305/echo",
+        "detail": "http://localhost:49801/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -318,7 +318,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:64305/search",
+        "detail": "http://localhost:49801/search",
         "name": "search (GET) works",
         "pass": true
       },
@@ -466,7 +466,7 @@
         "XHR": 17
       },
       "proxyDenied": {
-        "connect": 151,
+        "connect": 153,
         "http": 5
       }
     },

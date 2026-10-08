@@ -21,6 +21,13 @@ impl std::fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 pub type Result<T> = std::result::Result<T, Error>;
+/// A JSON string value, or "" for anything else.
+pub(crate) fn text(v: &serde_json::Value) -> &str {
+    v.as_str().unwrap_or("")
+}
+pub(crate) async fn sleep(ms: u64) {
+    tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+}
 pub mod broker;
 pub mod cdp;
 pub mod diagrams;
