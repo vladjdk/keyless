@@ -26,8 +26,6 @@ pub struct Credential {
     pub login_url: String,
     pub post_login_url: String,
     pub success: Value,
-    pub user_sel: Option<String>,
-    pub pass_sel: Option<String>,
 }
 #[derive(Default)]
 pub struct Diagnostics {
@@ -199,6 +197,15 @@ impl Broker {
             _ => Err(Error::policy("unknown_method")),
         }
     }
+    // One URL rule for agent navigation and every intercepted browser request.
+    fn permits(&self, u: &Url) -> bool {
+        ["http", "https"].contains(&u.scheme())
+            && self
+                .allowed
+                .contains(&u[url::Position::BeforeHost..url::Position::AfterPort])
+            && u.username().is_empty()
+            && u.password().is_none()
+    }
     fn destroy(&self, s: &Session, state: &str) {
         let mut d = s.data.lock().unwrap();
         if ["closed", "killed", "login_failed"].contains(&d.state.as_str()) {
@@ -240,8 +247,24 @@ impl Broker {
         let doc = cdp
             .send("DOM.getDocument", json!({"depth":0}), Some(&login.sid))
             .await?;
-        let user=cdp.send("DOM.querySelector",json!({"nodeId":doc["root"]["nodeId"],"selector":s.cred.user_sel.as_deref().unwrap_or("input[name=username]")}),Some(&login.sid)).await?["nodeId"].as_u64().unwrap_or(0);
-        let pass=cdp.send("DOM.querySelector",json!({"nodeId":doc["root"]["nodeId"],"selector":s.cred.pass_sel.as_deref().unwrap_or("input[type=password]")}),Some(&login.sid)).await?["nodeId"].as_u64().unwrap_or(0);
+        let user = cdp
+            .send(
+                "DOM.querySelector",
+                json!({"nodeId":doc["root"]["nodeId"],"selector":"input[name=username]"}),
+                Some(&login.sid),
+            )
+            .await?["nodeId"]
+            .as_u64()
+            .unwrap_or(0);
+        let pass = cdp
+            .send(
+                "DOM.querySelector",
+                json!({"nodeId":doc["root"]["nodeId"],"selector":"input[type=password]"}),
+                Some(&login.sid),
+            )
+            .await?["nodeId"]
+            .as_u64()
+            .unwrap_or(0);
         if user == 0 || pass == 0 {
             return Err(Error::policy("field_not_found"));
         }
@@ -324,8 +347,9 @@ impl Broker {
         if landed.path() != Url::parse(&s.cred.post_login_url).unwrap().path() {
             return Err(Error::policy("success_assertion_failed"));
         }
-        {
-            let mut d = s.data.lock().unwrap();
+        let mut d = s.data.lock().unwrap();
+        // The owner may have closed the session while login was finishing; never revive it.
+        if d.state == "sealed" {
             d.page = Some(page);
             d.tainted.clear();
             d.state = "active".into();
@@ -422,7 +446,7 @@ impl Broker {
                 if let Ok(u) = Url::parse(text(&p["request"]["url"])) {
                     host = u[url::Position::BeforeHost..url::Position::AfterPort].into();
                     path = u.path().into();
-                    ok = ["http", "https"].contains(&u.scheme()) && self.allowed.contains(&host);
+                    ok = self.permits(&u);
                 }
                 let method = text(&p["request"]["method"]);
                 let state = s.data.lock().unwrap().state.clone();
@@ -907,16 +931,10 @@ impl Broker {
         let sid = s.data.lock().unwrap().page.as_ref().unwrap().sid.clone();
         let action = text(&p["action"]);
         if action == "navigate" {
-            let u = Url::parse(text(&p["url"])).map_err(|_| Error::policy("denied_by_policy"))?;
-            if !["http", "https"].contains(&u.scheme())
-                || !self
-                    .allowed
-                    .contains(&u[url::Position::BeforeHost..url::Position::AfterPort])
-                || !u.username().is_empty()
-                || u.password().is_some()
-            {
-                return Err(Error::policy("denied_by_policy"));
-            }
+            let u = Url::parse(text(&p["url"]))
+                .ok()
+                .filter(|u| self.permits(u))
+                .ok_or_else(|| Error::policy("denied_by_policy"))?;
             self.goto(s, &sid, u.as_str()).await?;
             return Ok(json!({"ok":true}));
         }
@@ -1090,5 +1108,29 @@ mod tests {
             "unknown_session"
         );
         assert_eq!(b.tap.lock().unwrap().len(), 3);
+    }
+    #[test]
+    fn navigation_and_requests_share_one_url_rule() {
+        let b = Broker::new(
+            "unused".into(),
+            BTreeMap::new(),
+            BTreeSet::from(["localhost:8080".into()]),
+            None,
+        );
+        let ok = |u: &str| b.permits(&Url::parse(u).unwrap());
+        assert!(ok("http://localhost:8080/app"));
+        assert!(ok("https://localhost:8080/app?q=1"));
+        for denied in [
+            "http://localhost:9090/app",
+            "http://127.0.0.1:8080/app",
+            "http://user:pw@localhost:8080/app",
+            "ws://localhost:8080/ws",
+            "javascript:alert(1)",
+            "file:///etc/passwd",
+            "view-source:http://localhost:8080/",
+            "data:text/html,hi",
+        ] {
+            assert!(!ok(denied), "{denied}");
+        }
     }
 }

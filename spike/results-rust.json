@@ -48,12 +48,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:54989/app",
+        "detail": "http://localhost:64063/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:54989/invoices",
+        "detail": "http://localhost:64063/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -65,7 +65,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:54989/echo",
+        "detail": "http://localhost:64063/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -80,7 +80,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:54989/search",
+        "detail": "http://localhost:64063/search",
         "name": "search (GET) works",
         "pass": true
       },
@@ -203,7 +203,7 @@
       "attackerHits": {
         "websocket /ws": 13
       },
-      "attackerTcpConnections": 16,
+      "attackerTcpConnections": 17,
       "fixtureWebSocketUpgrades": 13,
       "forbidden": {
         "GET Document": 1,
@@ -235,7 +235,7 @@
     },
     "profile": "development",
     "proxy": false,
-    "tapBytes": 30122
+    "tapBytes": 30225
   },
   {
     "axProbe": [
@@ -286,12 +286,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:55226/app",
+        "detail": "http://localhost:64305/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:55226/invoices",
+        "detail": "http://localhost:64305/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -303,7 +303,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:55226/echo",
+        "detail": "http://localhost:64305/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -318,7 +318,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:55226/search",
+        "detail": "http://localhost:64305/search",
         "name": "search (GET) works",
         "pass": true
       },
@@ -466,7 +466,7 @@
         "XHR": 17
       },
       "proxyDenied": {
-        "connect": 129,
+        "connect": 151,
         "http": 5
       }
     },
@@ -484,6 +484,6 @@
     },
     "profile": "development",
     "proxy": true,
-    "tapBytes": 30187
+    "tapBytes": 30056
   }
 ]

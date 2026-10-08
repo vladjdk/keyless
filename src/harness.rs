@@ -187,12 +187,15 @@ impl Drop for Shutdown {
         self.0.shutdown();
     }
 }
-fn counts<'a>(keys: impl Iterator<Item = &'a str>) -> BTreeMap<String, usize> {
+fn counts(keys: impl Iterator<Item = String>) -> BTreeMap<String, usize> {
     let mut m = BTreeMap::new();
     for key in keys {
-        *m.entry(key.into()).or_default() += 1;
+        *m.entry(key).or_default() += 1;
     }
     m
+}
+fn text(v: &Value) -> &str {
+    v.as_str().unwrap_or("")
 }
 pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
     let attacker = Attacker::start().map_err(|e| Error::internal(e.to_string()))?;
@@ -225,8 +228,6 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
                 login_url: format!("{origin}{path}"),
                 post_login_url: format!("{origin}/app"),
                 success,
-                user_sel: None,
-                pass_sel: None,
             },
         )
     })
@@ -514,27 +515,22 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
         .filter(|m| m["masked"].as_u64().unwrap_or(0) > 0)
         .collect();
     let attacker_state = attacker.state.lock().unwrap();
-    let mut attacker_kinds = BTreeMap::new();
-    for h in &attacker_state.hits {
-        let key = format!(
+    let attacker_kinds = counts(attacker_state.hits.iter().map(|h| {
+        format!(
             "{} {}",
-            h["kind"].as_str().unwrap(),
-            h["url"].as_str().unwrap().split('?').next().unwrap()
-        );
-        *attacker_kinds.entry(key).or_insert(0usize) += 1;
-    }
-    let mut forbidden = BTreeMap::new();
-    for a in diag.audit.iter().filter(|a| a["decision"] == "forbid") {
-        let key = format!(
-            "{} {}",
-            a["method"].as_str().unwrap(),
-            a["type"].as_str().unwrap()
-        );
-        *forbidden.entry(key).or_insert(0usize) += 1;
-    }
+            text(&h["kind"]),
+            text(&h["url"]).split('?').next().unwrap_or("")
+        )
+    }));
+    let forbidden = counts(
+        diag.audit
+            .iter()
+            .filter(|a| a["decision"] == "forbid")
+            .map(|a| format!("{} {}", text(&a["method"]), text(&a["type"]))),
+    );
     let proxy_denied = proxy.as_ref().map(|p| {
         let denied = p.denied.lock().unwrap();
-        counts(denied.iter().filter_map(|v| v["kind"].as_str()))
+        counts(denied.iter().map(|v| text(&v["kind"]).to_owned()))
     });
     let scanned = canaries.iter().filter(|c| c["cls"] != "rendered").count();
     // Extra regression gates, in addition to every original hostile-agent case.
