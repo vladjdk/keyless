@@ -1,8 +1,8 @@
 # keyless design
 
-keyless specifies a local broker that lets an agent operate an authenticated website through a filtered channel. Credentials and raw browser control remain inside the broker boundary.
+keyless is a local broker that lets an agent work in a logged-in website through a filtered channel. Credentials and raw browser control stay inside the broker.
 
-This document specifies the isolated production system. It does not describe an implemented production release. The repository contains a browser-fixture prototype and diagram generator written in Rust. [Prototype measurements](../spike/RESULTS.md) and [tradeoffs and gaps](TRADEOFFS.md) distinguish recorded evidence from requirements.
+This document is the spec for the isolated production system, which has not been built. What exists today is a Rust prototype that runs against a browser fixture. [Prototype measurements](../spike/RESULTS.md) records what has been tested, and [tradeoffs and gaps](TRADEOFFS.md) lists what has not.
 
 ## Scope
 
@@ -14,9 +14,9 @@ Excluded capabilities, implementation gaps and unresolved choices are listed sep
 
 ## Security target
 
-For a conformant Isolated deployment, the agent channel must not emit vault secrets or members of the enumerated session-secret set in plain, URL-encoded, base64 or hex form under the conformance suite. The suite must scan concatenated messages, including errors and handles. This is a specified test obligation, not a verified guarantee of the current prototype.
+For a conformant Isolated deployment, the agent channel must not emit vault secrets or members of the enumerated session-secret set in plain, URL-encoded, base64 or hex form under the conformance suite. The suite must scan concatenated messages, including errors and handles.
 
-Vault secrets include passwords, TOTP seeds and live login codes. The session-secret set includes cookie values, credential-bearing headers, qualifying storage values and login redirect parameters. Structural non-emission excludes raw HTML, attributes, hidden fields and network data from the protocol. These controls do not establish confidentiality for every token a site renders or transforms.
+Vault secrets include passwords, TOTP seeds and live login codes. The session-secret set includes cookie values, credential-bearing headers, qualifying storage values and login redirect parameters. Structural non-emission excludes raw HTML, attributes, hidden fields and network data from the protocol. A token that a site renders or transforms itself can still leak.
 
 An agent is an untrusted principal subject to prompt injection. It can use all tools and privileges granted to it, including a same-user shell. The Isolated profile must prevent every principal the agent can act as from reading broker or browser memory, reading vault files, replacing binaries or configuration, or obtaining raw browser control. At-rest encryption does not replace this boundary.
 
@@ -46,7 +46,7 @@ The Core specifies observable behaviour in terms of Agent, Broker, Browser and S
 
 Keeper, Driver, Gateway, the prototype and the diagram generator use Rust. The production MCP adapter uses the official `modelcontextprotocol/rust-sdk` (`rmcp`) on the untrusted side of the broker. No separate runtime is required for the adapter.
 
-The browser driver uses an allowlisted CDP client over an inherited pipe, with Chromium pinned by hash and the browser sandbox enabled. Production dependencies require `cargo-vet` and `cargo-deny` checks. Release requirements include signatures and reproducible builds. These are production requirements, not evidence of dependency audit or release verification.
+The browser driver uses an allowlisted CDP client over an inherited pipe, with Chromium pinned by hash and the browser sandbox enabled. Production dependencies require `cargo-vet` and `cargo-deny` checks. Release requirements include signatures and reproducible builds.
 
 Repository commands are documented in [README.md](../README.md#run).
 
@@ -75,7 +75,7 @@ Internal channels are inherited descriptors, not named sockets authenticated onl
 | Isolated | Agent-reachable principals cannot read protected memory or files or modify service code, configuration or launch paths |
 | Attested | Separate machine or microVM with attestation-bound key release; outside the initial implementation scope |
 
-The specified Isolated installer uses dedicated service uids: systemd system/socket units and transient browser identities on Linux; a root-owned LaunchDaemon and browser-uid pool on macOS. Containers alone do not establish isolation from an agent that controls their runtime.
+The Isolated installer uses dedicated service uids: systemd system/socket units and transient browser identities on Linux; a root-owned LaunchDaemon and browser-uid pool on macOS. A container is not enough on its own if the agent controls the container runtime.
 
 - Binaries and hash-pinned Chromium must be root-owned. Any non-root-writable ancestor of service executables, browser, vault, policy or hooks prevents Isolated startup.
 - The Chromium sandbox must be enabled and verified at launch. Linux requires the user-namespace sandbox and an appropriate AppArmor profile where required.
@@ -97,7 +97,7 @@ Session handles are 128-bit random values bound to their creating connection. Se
 
 ## Owner and agent interfaces
 
-The production CLI requires `install`, `add`, `agent add`, `policy edit`, `policy explain`, `policy test`, `attend`, `doctor`, `sessions ls`, scoped `revoke` and `audit tail` commands. These commands are specified interfaces, not available prototype commands. Installation must clear cached sudo credentials. Credential enrolment must validate a test login, derive a success assertion and post-login URL, obtain owner confirmation and warn when a password falls below the tripwire floor.
+The production CLI requires `install`, `add`, `agent add`, `policy edit`, `policy explain`, `policy test`, `attend`, `doctor`, `sessions ls`, scoped `revoke` and `audit tail` commands. None of these exist in the prototype yet. Installation must clear cached sudo credentials. Credential enrolment must validate a test login, derive a success assertion and post-login URL, obtain owner confirmation and warn when a password falls below the tripwire floor.
 
 Agent refusals require `{code, retryable, retry_after, explanation, next_step, tell_user}`. Repeated identical refusals return `stop_retrying`. Tool descriptions must prohibit requesting passwords or codes through the agent. A `needs_human` response can direct the owner to the attendance command without conveying secret material. Denied audit entries should identify a narrowly scoped permit rather than a broad policy relaxation.
 
@@ -189,7 +189,7 @@ Event hooks use a root-owned manifest-bound path, a separate unprivileged uid, c
 
 ## Memory and interception requirements
 
-Protected service and browser memory must be inaccessible to agent-reachable principals through debugger attachment, `task_for_pid`, `ptrace`, `/proc`, crash reports, dumps, swap and shared memory. Services require platform hardening without debugging entitlements. GPU acceleration is disabled. Browser passwords can remain in freed browser memory until process exit; browser identity isolation and session destruction are required controls, not browser-heap zeroisation claims.
+Protected service and browser memory must be inaccessible to agent-reachable principals through debugger attachment, `task_for_pid`, `ptrace`, `/proc`, crash reports, dumps, swap and shared memory. Services require platform hardening without debugging entitlements. GPU acceleration is disabled. Browser passwords can remain in freed browser memory until process exit, so the defence is browser identity isolation and destroying the session, not zeroing the browser heap.
 
 The browser-to-site connection requires HTTPS and fatal TLS errors. The browser must use a controlled root store and ignore user trust anchors, environment/system proxy settings and user-level DNS overrides. The egress proxy tunnels CONNECT without terminating TLS or holding a CA key. The Driver binds its listener before starting the browser.
 
@@ -211,7 +211,7 @@ The conformance kit is black-box: fixture server, vault seed format, protocol cl
 - Measure at least 70% task completion against an unrestricted browser baseline on a fixed ten-site supported-login set. The legacy ten-read-task benchmark for Gitea, Nextcloud and WordPress is separate and unrun.
 - Measure install-to-first-sealed-login time against a ten-minute target and validate platform isolation before claiming support.
 
-These tests are required evidence. Their implementation and execution status is recorded in [TRADEOFFS.md](TRADEOFFS.md), not inferred from this specification.
+Which of these tests exist and have run is tracked in [TRADEOFFS.md](TRADEOFFS.md).
 
 ## Diagrams
 

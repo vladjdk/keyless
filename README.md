@@ -15,13 +15,17 @@
 
 # keyless
 
-keyless is a local browser-session broker for AI agents. Its specified production design keeps credentials and enumerated session secrets behind an isolated service boundary and exposes a filtered page view with restricted actions.
+keyless is a local broker that logs AI agents into websites. The broker fills in the password, holds the session cookies and gives the agent a filtered text view of the page to click and type in.
 
-Status: pre-alpha prototype. The isolated production broker is not implemented. No independent security audit has been performed. The prototype does not establish protection against an agent with a same-user shell.
+## Status
+
+Pre-alpha. The repository holds a Rust prototype that runs the broker against a local hostile-site fixture, and the design for the production system in [docs/DESIGN.md](docs/DESIGN.md).
+
+Most of this README describes the design. The production broker (separate service users, the vault, TOTP, revocation, the MCP adapter) does not exist yet; [docs/TRADEOFFS.md](docs/TRADEOFFS.md) lists what is missing. Nobody has audited the code. The prototype runs as your own user, so an agent with a shell can read its memory.
 
 ## Run
 
-The repository uses Rust and Cargo. A Chrome or Chromium executable is required for the browser fixture.
+You need Rust and a Chrome or Chromium binary.
 
 ```bash
 cargo build
@@ -30,87 +34,94 @@ cargo run --bin spike -- /path/to/chrome
 cargo run --bin diagrams
 ```
 
-The `spike` binary runs the local hostile-site fixture and behavioural checks. The `diagrams` binary generates SVG assets. These commands do not install an isolated service. Rust measurement output belongs in `spike/results-rust.json`; [spike/results.json](spike/results.json) contains legacy prototype measurements, not Rust results.
+`spike` runs the hostile-site fixture and writes its results to `spike/results-rust.json`. `diagrams` regenerates the SVGs in `assets/`.
 
 ## Architecture
 
-The table and diagrams describe the specified isolated production design, not the prototype's process boundaries.
+The broker is three services and a browser, each running as its own system user, so a compromised agent cannot reach the parts that hold secrets.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/architecture-dark.svg">
-    <img src="assets/architecture-light.svg" alt="Specified architecture: the gateway exposes a filtered protocol; credentials remain within keeper, driver, browser and site." width="100%">
+    <img src="assets/architecture-light.svg" alt="Architecture: the agent talks only to the gateway; credentials stay within keeper, driver, browser and site." width="100%">
   </picture>
 </p>
 
-| Component | Responsibility | Required boundary |
+| Component | Does | Has no access to |
 |---|---|---|
-| Keeper | Vault access, authorisation, audit | No browser-page or agent-protocol parsing |
-| Driver | Login, browser control, filtering, secret matching, egress proxy | Session-limited access to credential material |
-| Gateway | Agent protocol, schemas, session state | No credential material |
-| Browser | One sandboxed Chromium instance per session | Separate session uid; allowlisted egress |
+| Keeper | Vault, authorisation, audit log | Web pages or the agent protocol |
+| Driver | Login, browser control, filtering, secret matching, egress proxy | Credentials for other sessions |
+| Gateway | Agent protocol, schemas, session state | Credentials |
+| Browser | One sandboxed Chromium per session | Hosts outside the allowlist |
 
-Rust is the implementation language for the prototype, diagram generator and specified services. The specified MCP adapter uses the official `modelcontextprotocol/rust-sdk` (`rmcp`); the adapter is not implemented.
+Everything is written in Rust. The MCP adapter will use the official [`rmcp`](https://github.com/modelcontextprotocol/rust-sdk) SDK.
 
 ## Sealed login
 
-The production design requires the broker to select the login target from the credential binding. The agent supplies neither login selectors nor credential input and receives no page observations or actions during login.
+The broker picks the login page from the stored credential, so the agent cannot point it at a phishing form. During login the agent gets no observations and can take no actions.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/sealed-login-dark.svg">
-    <img src="assets/sealed-login-light.svg" alt="Specified sealed login: broker-controlled fill, success and residue checks, then a fresh tab." width="100%">
+    <img src="assets/sealed-login-light.svg" alt="Sealed login: the broker fills and submits, checks for success and leftover secrets, then opens a fresh tab." width="100%">
   </picture>
 </p>
 
-Activation requires a passing stored success assertion, empty tainted fields and a passing secret scan. A fresh tab opens at the pinned post-login URL; the login tab closes and the success assertion is checked again. Cookies persist. Login-page script state and form history are not transferred.
+The session unseals once the stored success assertion matches, the password fields are empty and a scan of the page finds no secrets. The broker then opens a fresh tab at the post-login URL, closes the login tab and checks the assertion again. Cookies carry over; script state and form history from the login page are dropped.
 
 ## Session lifecycle
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/lifecycle-dark.svg">
-    <img src="assets/lifecycle-light.svg" alt="Specified lifecycle: opening, sealed, needs_human, active, and terminal states." width="100%">
+    <img src="assets/lifecycle-light.svg" alt="Lifecycle: opening, sealed, needs_human, active, and terminal states." width="100%">
   </picture>
 </p>
 
-The design specifies local expiration and revocation. The diagram is not an implementation-status map; [tradeoffs and gaps](docs/TRADEOFFS.md) lists unimplemented capabilities.
+Sessions expire on a local timer and the owner can revoke them at any time. The prototype covers part of this diagram; [tradeoffs and gaps](docs/TRADEOFFS.md) says which part.
 
 ## Agent interface
 
-The production protocol exposes a structured text observation and `click`, `type`, `select`, `scroll`, `navigate` and `wait` actions. Element references are snapshot-bound. The agent can read back ordinary values it typed; broker-filled credentials remain tainted.
+The agent gets a structured text snapshot of the page and six actions: `click`, `type`, `select`, `scroll`, `navigate` and `wait`. Element references are tied to the snapshot they came from. The agent can read back text it typed itself, but fields the broker filled stay hidden.
 
-The protocol does not expose script evaluation, raw HTML, attributes, link targets, hidden fields, cookies, storage or network inspection. Screenshots and file transfers are outside the initial protocol scope. Withheld content uses a fixed marker without disclosing its length.
+There is no script evaluation, raw HTML, attribute access, link targets, hidden fields, cookies, storage or network inspection. Screenshots and file transfers are left out of the first version. Withheld content shows up as a fixed marker that does not reveal its length.
 
-New credentials default to `safe-methods`: GET and HEAD only. This restricts request methods; it does not make a website read-only.
+New credentials start on the `safe-methods` policy, which allows GET and HEAD only. Some sites change state on GET, so this cuts down writes rather than blocking them.
 
 ## Security model
 
-The adversary is a prompt-injected agent that can use its granted tools, including a shell under its own uid. The specified Isolated profile requires that every principal the agent can act as be unable to read service memory or files, modify service code or configuration, or access raw browser control.
+We assume the agent is prompt-injected and will use every tool it has, including a shell running as its own user. In the production setup, no user the agent can act as is able to read the broker's memory or files, change its code or config, or drive the browser directly.
 
-The security target is non-emission of vault secrets and an enumerated session-secret set in plain, URL-encoded, base64 and hex form on the agent channel. This is a conformance requirement, not a verified guarantee for this repository. A passing finite fixture suite does not prove arbitrary-site confidentiality.
+The goal is that no vault secret or session secret ever shows up on the agent channel, in plain text, URL-encoded, base64 or hex. A conformance suite will test for this. A clean run on test fixtures is good evidence, but it is not proof for every website.
 
-An allowed page can expose a newly created API token, transform a non-HttpOnly cookie beyond the matcher, or perform a state change through GET. Filtering does not prevent misuse of authorised site features. Full exclusions and verification gaps are in [docs/TRADEOFFS.md](docs/TRADEOFFS.md); engineering requirements are in [docs/DESIGN.md](docs/DESIGN.md).
+keyless does not protect against:
+
+- an allowed page that displays a freshly created API token;
+- a same-origin script that transforms a non-HttpOnly cookie past what the matcher recognises;
+- a GET request that changes state;
+- the agent misusing a feature policy allows, like sending mail from a webmail account it is logged into.
+
+The full list is in [docs/TRADEOFFS.md](docs/TRADEOFFS.md), and engineering requirements are in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Prototype results
 
-[Legacy prototype measurements](spike/RESULTS.md) record two local fixture configurations, each with 27 passing behavioural checks and no detected leaks among 22 scanned canaries. These are historical measurements from the legacy prototype, not measurements of the Rust implementation.
+The [legacy JavaScript prototype](spike/RESULTS.md) passed 27 of 27 behavioural checks in both fixture configurations and leaked none of the 22 canaries it scanned for. The Rust port writes its own numbers to `spike/results-rust.json`.
 
-In the recorded interception-only configuration, the attacker received 13 WebSocket upgrades and 16 TCP connections. In the proxy configuration, it received zero upgrades and zero TCP connections. The fixture also records a visible API token, a transformed cookie and a state-changing GET as explicit security exclusions.
+With browser request interception alone, the attacker server received 13 WebSocket upgrades and 16 TCP connections. Adding the egress proxy brought both to zero. The fixture also reproduces three of the known gaps above: a visible API token, a transformed cookie and a state-changing GET.
 
-The raw legacy report is [spike/results.json](spike/results.json). Current Rust measurements must be read from `spike/results-rust.json` after a Rust fixture run; no Rust pass count is asserted here.
+Raw legacy numbers are in [spike/results.json](spike/results.json).
 
 ## Repository layout
 
 ```text
-Cargo.toml           Rust package and binary definitions
-src/                 Rust prototype and diagram-generation sources
-spike/               Fixture reports and measurement documentation
-assets/              Branding and SVG diagrams
-docs/DESIGN.md       Production architecture and engineering requirements
-docs/TRADEOFFS.md    Tradeoffs, unimplemented capabilities and verification gaps
+Cargo.toml           Rust package and binaries
+src/                 Prototype and diagram generator
+spike/               Fixture reports
+assets/              Logo, banners and diagrams
+docs/DESIGN.md       Production architecture and requirements
+docs/TRADEOFFS.md    Tradeoffs, missing pieces and verification gaps
 ```
 
 ## License
 
-`Cargo.toml` declares Apache-2.0 for the Rust package. The repository does not include a license text. Specification licensing is listed in [tradeoffs and gaps](docs/TRADEOFFS.md).
+`Cargo.toml` declares Apache-2.0, but there is no LICENSE file yet. The specification's license is still undecided (see [tradeoffs and gaps](docs/TRADEOFFS.md#unresolved-choices)).

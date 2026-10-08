@@ -4,5 +4,5 @@
 <g transform="translate(72 98) scale(2.08)"><rect x="3" y="3" width="94" height="44" rx="7" fill="none" stroke="#f2f1ec" stroke-width="5.5"/><circle cx="22" cy="25" r="6.8" fill="#f2f1ec"/><circle cx="40" cy="25" r="6.8" fill="#f2f1ec"/><circle cx="58" cy="25" r="6.8" fill="#f2f1ec"/><rect x="74" y="12" width="6" height="26" fill="#7a7aff"/></g>
 <text x="318" y="178" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="96" font-weight="700" letter-spacing="-2" fill="#f2f1ec">keyless</text>
 <text x="74" y="252" font-family="'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="24" font-weight="500" fill="#f2f1ec">Sealed browser sessions for AI agents.</text>
-<text x="74" y="284" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#9a9993">Your agent drives the page. It never holds the password or the session.</text>
+<text x="74" y="284" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#9a9993">A local broker that logs agents in and keeps the password and cookies to itself.</text>
 </svg>

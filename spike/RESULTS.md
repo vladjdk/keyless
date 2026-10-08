@@ -1,12 +1,12 @@
 # Prototype measurements
 
-[results.json](results.json) is the recorded report from the legacy prototype. Its numbers are not measurements of the Rust implementation. The current Rust fixture command is:
+[results.json](results.json) is the report from the legacy JavaScript prototype. The Rust port has its own run:
 
 ```bash
 cargo run --bin spike -- /path/to/chrome
 ```
 
-Run it from the repository root. Rust measurement output belongs in `spike/results-rust.json`. No Rust result count is asserted in this document.
+Run it from the repository root. It writes `spike/results-rust.json`. The numbers below are all from the legacy prototype.
 
 ## Legacy fixture results
 
@@ -27,7 +27,7 @@ The report contains two configurations, one with browser request interception al
 | Dialogs dropped | 1 | 1 |
 | Broker errors | 0 | 0 |
 
-The recorded scanner covered plain, URL-encoded, hex, base64 at all alignments, base64url and 12-character chunks. Zero detected canary leaks is a finite fixture result, not a proof of arbitrary-site confidentiality.
+The recorded scanner covered plain, URL-encoded, hex, base64 at all alignments, base64url and 12-character chunks. Zero leaks on this fixture is a good sign, but it does not prove the same holds on every site.
 
 ## Behavioural coverage
 
@@ -45,7 +45,7 @@ The fixture places cookie canaries in visible text, title, alt/ARIA text, link t
 
 The interception-only report records 13 WebSocket upgrades at the attacker and 16 attacker TCP connections. The proxy report records neither. The proxy denied 5 HTTP requests and 181 CONNECT requests in the recorded run. Browser interception alone is not host confinement.
 
-These measurements do not verify every browser transport or production TLS enforcement. Required transport and platform verification is listed in [tradeoffs and gaps](../docs/TRADEOFFS.md#verification-gaps).
+Other browser transports and TLS enforcement were not tested; see [tradeoffs and gaps](../docs/TRADEOFFS.md#verification-gaps).
 
 ## Explicit security exclusions
 
@@ -57,10 +57,10 @@ Both configurations record all three of the following:
 | Non-HttpOnly cookie transformed by same-origin script | Visible |
 | State-changing GET | State changed |
 
-These outcomes demonstrate exclusions in the specified security target. They are not canary-scanner failures concealed from the result count.
+These are known gaps in the security target, and the fixture includes them on purpose. They are reported here rather than counted as scanner failures.
 
 ## Evidence boundary
 
-The legacy prototype ran as a single process under the caller's uid, without service isolation. Its tapped agent channel was an in-process function boundary, not a real socket. The fixture used HTTP on localhost. It did not implement TOTP, owner attendance, lifetime/revocation controls or an audit chain.
+The legacy prototype ran as a single process under the caller's uid, without service isolation. Its tapped agent channel was an in-process function call rather than a socket. The fixture used HTTP on localhost. It did not implement TOTP, owner attendance, lifetime/revocation controls or an audit chain.
 
-The isolated production architecture is specified in [DESIGN.md](../docs/DESIGN.md). Unimplemented capabilities, unrun real-application benchmarks, platform isolation checks and independent-audit status are listed in [TRADEOFFS.md](../docs/TRADEOFFS.md).
+The production architecture is in [DESIGN.md](../docs/DESIGN.md). What is still missing or untested is in [TRADEOFFS.md](../docs/TRADEOFFS.md).
