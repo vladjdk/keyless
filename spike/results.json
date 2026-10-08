@@ -1,0 +1,449 @@
+[
+  {
+    "proxy": false,
+    "checks": [
+      {
+        "name": "classic login reaches active",
+        "pass": true,
+        "detail": {
+          "state": "active",
+          "result": null
+        }
+      },
+      {
+        "name": "observe refused while sealed",
+        "pass": true,
+        "detail": {
+          "code": "session_sealed"
+        }
+      },
+      {
+        "name": "act refused while sealed",
+        "pass": true,
+        "detail": {
+          "code": "session_sealed"
+        }
+      },
+      {
+        "name": "dashboard readable",
+        "pass": true,
+        "detail": "http://localhost:63675/app"
+      },
+      {
+        "name": "read task: invoice table visible after click",
+        "pass": true,
+        "detail": "http://localhost:63675/invoices"
+      },
+      {
+        "name": "stale ref rejected",
+        "pass": true,
+        "detail": {
+          "code": "stale_ref"
+        }
+      },
+      {
+        "name": "echo page reached and still readable",
+        "pass": true,
+        "detail": "http://localhost:63675/echo"
+      },
+      {
+        "name": "echo page has withheld markers",
+        "pass": true
+      },
+      {
+        "name": "agent sees its own typed value",
+        "pass": true
+      },
+      {
+        "name": "search (GET) works",
+        "pass": true,
+        "detail": "http://localhost:63675/search"
+      },
+      {
+        "name": "POST blocked in safe-methods",
+        "pass": true
+      },
+      {
+        "name": "redirect hop to attacker blocked",
+        "pass": true
+      },
+      {
+        "name": "popup closed",
+        "pass": true,
+        "detail": 1
+      },
+      {
+        "name": "session still usable after popup",
+        "pass": true
+      },
+      {
+        "name": "navigate denied: http",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: javascript",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: file",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: view-source",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: data",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "non-allowlisted key denied",
+        "pass": true
+      },
+      {
+        "name": "SPA login (no navigation) reaches active",
+        "pass": true,
+        "detail": {
+          "state": "active",
+          "result": null
+        }
+      },
+      {
+        "name": "SPA session lands on dashboard in fresh tab",
+        "pass": true
+      },
+      {
+        "name": "SPA that mirrors the password into the page fails closed",
+        "pass": true,
+        "detail": {
+          "state": "login_failed",
+          "result": "secret_residue"
+        }
+      },
+      {
+        "name": "wrong password (site echoes it) fails with enum only",
+        "pass": true,
+        "detail": {
+          "state": "login_failed",
+          "result": "success_assertion_failed"
+        }
+      },
+      {
+        "name": "wrong guess is ordinary typing",
+        "pass": true
+      },
+      {
+        "name": "typing the vault secret kills the session",
+        "pass": true,
+        "detail": {
+          "code": "session_killed"
+        }
+      },
+      {
+        "name": "subject suspended afterwards",
+        "pass": true,
+        "detail": {
+          "code": "suspended"
+        }
+      }
+    ],
+    "leaks": [],
+    "canariesScanned": 22,
+    "tapBytes": 31115,
+    "notClaimed": {
+      "renderedApiTokenVisible": true,
+      "xssReversedCookieVisible": true,
+      "stateChangedByGet": true
+    },
+    "egress": {
+      "attackerHits": {
+        "websocket /ws": 13
+      },
+      "attackerTcpConnections": 16,
+      "fixtureWebSocketUpgrades": 13,
+      "proxyDenied": null,
+      "interceptedResourceTypes": {
+        "Document": 60,
+        "Other": 30,
+        "XHR": 17,
+        "Image": 15,
+        "Ping": 13
+      },
+      "forbidden": {
+        "GET XHR": 13,
+        "GET Image": 13,
+        "POST Ping": 13,
+        "POST Document": 1,
+        "GET Document": 1
+      }
+    },
+    "falseTrips": {
+      "benignObservations": 15,
+      "withMasks": 0,
+      "detail": []
+    },
+    "axProbe": [
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/spa-login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/spa-login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      }
+    ],
+    "dialogsDropped": 1,
+    "brokerErrors": []
+  },
+  {
+    "proxy": true,
+    "checks": [
+      {
+        "name": "classic login reaches active",
+        "pass": true,
+        "detail": {
+          "state": "active",
+          "result": null
+        }
+      },
+      {
+        "name": "observe refused while sealed",
+        "pass": true,
+        "detail": {
+          "code": "session_sealed"
+        }
+      },
+      {
+        "name": "act refused while sealed",
+        "pass": true,
+        "detail": {
+          "code": "session_sealed"
+        }
+      },
+      {
+        "name": "dashboard readable",
+        "pass": true,
+        "detail": "http://localhost:63823/app"
+      },
+      {
+        "name": "read task: invoice table visible after click",
+        "pass": true,
+        "detail": "http://localhost:63823/invoices"
+      },
+      {
+        "name": "stale ref rejected",
+        "pass": true,
+        "detail": {
+          "code": "stale_ref"
+        }
+      },
+      {
+        "name": "echo page reached and still readable",
+        "pass": true,
+        "detail": "http://localhost:63823/echo"
+      },
+      {
+        "name": "echo page has withheld markers",
+        "pass": true
+      },
+      {
+        "name": "agent sees its own typed value",
+        "pass": true
+      },
+      {
+        "name": "search (GET) works",
+        "pass": true,
+        "detail": "http://localhost:63823/search"
+      },
+      {
+        "name": "POST blocked in safe-methods",
+        "pass": true
+      },
+      {
+        "name": "redirect hop to attacker blocked",
+        "pass": true
+      },
+      {
+        "name": "popup closed",
+        "pass": true,
+        "detail": 1
+      },
+      {
+        "name": "session still usable after popup",
+        "pass": true
+      },
+      {
+        "name": "navigate denied: http",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: javascript",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: file",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: view-source",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "navigate denied: data",
+        "pass": true,
+        "detail": {
+          "code": "denied_by_policy"
+        }
+      },
+      {
+        "name": "non-allowlisted key denied",
+        "pass": true
+      },
+      {
+        "name": "SPA login (no navigation) reaches active",
+        "pass": true,
+        "detail": {
+          "state": "active",
+          "result": null
+        }
+      },
+      {
+        "name": "SPA session lands on dashboard in fresh tab",
+        "pass": true
+      },
+      {
+        "name": "SPA that mirrors the password into the page fails closed",
+        "pass": true,
+        "detail": {
+          "state": "login_failed",
+          "result": "secret_residue"
+        }
+      },
+      {
+        "name": "wrong password (site echoes it) fails with enum only",
+        "pass": true,
+        "detail": {
+          "state": "login_failed",
+          "result": "success_assertion_failed"
+        }
+      },
+      {
+        "name": "wrong guess is ordinary typing",
+        "pass": true
+      },
+      {
+        "name": "typing the vault secret kills the session",
+        "pass": true,
+        "detail": {
+          "code": "session_killed"
+        }
+      },
+      {
+        "name": "subject suspended afterwards",
+        "pass": true,
+        "detail": {
+          "code": "suspended"
+        }
+      }
+    ],
+    "leaks": [],
+    "canariesScanned": 22,
+    "tapBytes": 31013,
+    "notClaimed": {
+      "renderedApiTokenVisible": true,
+      "xssReversedCookieVisible": true,
+      "stateChangedByGet": true
+    },
+    "egress": {
+      "attackerHits": {},
+      "attackerTcpConnections": 0,
+      "fixtureWebSocketUpgrades": 0,
+      "proxyDenied": {
+        "http": 5,
+        "connect": 181
+      },
+      "interceptedResourceTypes": {
+        "Document": 60,
+        "Other": 30,
+        "XHR": 17,
+        "Image": 15,
+        "Ping": 13
+      },
+      "forbidden": {
+        "GET XHR": 13,
+        "GET Image": 13,
+        "POST Ping": 13,
+        "POST Document": 1,
+        "GET Document": 1
+      }
+    },
+    "falseTrips": {
+      "benignObservations": 15,
+      "withMasks": 0,
+      "detail": []
+    },
+    "axProbe": [
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/spa-login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/spa-login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      },
+      {
+        "login": "/login",
+        "passwordVisibleInAX": false
+      }
+    ],
+    "dialogsDropped": 1,
+    "brokerErrors": []
+  }
+]
