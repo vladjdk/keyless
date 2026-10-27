@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>keyless demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ground: #F1F0EB; --card: #FFFFFF; --ink: #17181C; --muted: #5F5E5A; --line: #D9D6CC;
+  --panel: #1B1C21; --panel-ink: #E8E6DF; --panel-line: #3A3B42;
+  --fill: #3453C8; --keyless: #C4501F;
+  --vis-bg: #DCEBDF; --vis-fg: #1F5135;
+  --wh-bg: #E2E0D8; --wh-fg: #33322F;
+  --ex-bg: #F6DAD6; --ex-fg: #7E1D15;
+  --open-bg: #F5E3B8; --open-fg: #5C3E00;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.5 Inter, system-ui, sans-serif; }
+main { max-width: 1320px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 28px; }
+h1, h2 { font-family: 'Space Grotesk', Inter, sans-serif; margin: 0; }
+h1 { font-size: 40px; line-height: 1.1; }
+h2 { font-size: 24px; }
+.sub { color: var(--muted); margin: 6px 0 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-block; font: 600 12px Inter, sans-serif; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.visible { background: var(--vis-bg); color: var(--vis-fg); }
+.withheld { background: var(--wh-bg); color: var(--wh-fg); }
+.exposed { background: var(--ex-bg); color: var(--ex-fg); }
+.open { background: var(--open-bg); color: var(--open-fg); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap: 24px; }
+.side { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.side header { display: flex; flex-direction: column; gap: 4px; }
+.tag { font: 600 13px Inter, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+.fill .tag { color: var(--fill); }
+.kl .tag { color: var(--keyless); }
+.side p { margin: 0; color: var(--muted); font-size: 15px; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 600 14px Inter, sans-serif; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+button.primary { border: 0; color: #fff; }
+.fill button.primary { background: var(--fill); }
+.kl button.primary, button.both { background: var(--keyless); color: #fff; border: 0; }
+button:disabled { opacity: 0.5; cursor: default; }
+iframe { width: 100%; height: 260px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.browser { height: 260px; border: 1px dashed var(--panel-line); border-radius: 10px; background: var(--panel); color: var(--panel-ink); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+.browser .state { font: 600 14px Inter, sans-serif; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; }
+.snap { display: flex; flex-direction: column; gap: 4px; }
+.snap div { overflow-wrap: anywhere; }
+.actor { font-size: 13px; color: var(--muted); }
+.note { font-size: 14px; color: var(--muted); }
+.tools { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.tools-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 860px; }
+th { text-align: left; font: 600 13px Inter, sans-serif; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th.fill-h { color: var(--fill); }
+th.kl-h { color: var(--keyless); }
+td { padding: 12px; border-bottom: 1px solid #EBE8E0; vertical-align: top; width: 33%; }
+td .res { margin-top: 6px; overflow-wrap: anywhere; }
+.chan { background: var(--panel); color: var(--panel-ink); border-radius: 14px; padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 24px; }
+.chan h2 { color: #fff; font-size: 20px; }
+.big { font: 700 64px/1 'Space Grotesk', Inter, sans-serif; }
+.log { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow: auto; font-size: 12px; }
+.log div { border-bottom: 1px solid var(--panel-line); padding-bottom: 6px; overflow-wrap: anywhere; }
+.muted-dark { color: #C9C7BF; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>What can the agent see?</h1>
+    <p class="sub">The same test password, signed in two ways. Everything below runs live on this machine against local test sites.</p>
+  </div>
+  <div class="legend" aria-label="Legend">
+    <span class="chip visible">Visible: ordinary page content</span>
+    <span class="chip withheld">Withheld or refused</span>
+    <span class="chip exposed">Exposed: a secret reached the agent</span>
+    <span class="chip open">Note</span>
+  </div>
+
+  <div class="cols">
+    <section class="side fill" aria-labelledby="fill-title">
+      <header>
+        <span class="tag">Fill into the page</span>
+        <h2 id="fill-title">The password manager types into the site</h2>
+        <p>The password goes into the site's own form field. The agent works in that same page, with page tools.</p>
+      </header>
+      <div class="steps">
+        <button class="primary" id="b-fill">1 · Password manager fills</button>
+        <button id="b-submit">2 · Sign in</button>
+        <button id="b-reset">Reset</button>
+      </div>
+      <iframe id="frame" src="/baseline/login" title="Fill-into-page test site"></iframe>
+      <span class="actor" id="fill-status">Login page loaded. Nothing filled yet.</span>
+    </section>
+
+    <section class="side kl" aria-labelledby="kl-title">
+      <header>
+        <span class="tag">keyless</span>
+        <h2 id="kl-title">The broker signs in, sealed</h2>
+        <p>The broker fills the password in its own browser. The agent gets a filtered snapshot and six actions.</p>
+      </header>
+      <div class="steps">
+        <button class="primary" id="b-open">1 · Open session</button>
+        <button id="b-observe" disabled>2 · Observe</button>
+      </div>
+      <div class="browser" aria-live="polite">
+        <div class="state"><span>Session</span><span class="chip withheld" id="kl-state">not open</span></div>
+        <div class="muted-dark" id="kl-msg">The agent never gets a handle to the broker's browser.</div>
+        <div class="snap mono" id="snap"></div>
+      </div>
+      <span class="actor" id="kl-status">Waiting.</span>
+    </section>
+  </div>
+
+  <section class="tools" aria-labelledby="tools-title">
+    <div class="tools-head">
+      <div>
+        <h2 id="tools-title">The same agent tools, both ways</h2>
+        <p class="note">Left: each line actually runs in the test page. Right: each one is sent to the broker as an agent request.</p>
+      </div>
+      <button class="both" id="b-run">Run agent tools on both</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Agent tool</th><th scope="col" class="fill-h">Fill into the page</th><th scope="col" class="kl-h">keyless</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="note"><span class="chip open">Note</span> The session cookie is HttpOnly, so page scripts can't read it. An agent that drives the browser over the DevTools protocol can (<span class="mono">Network.getAllCookies</span>).</p>
+  </section>
+
+  <section class="chan" aria-labelledby="chan-title">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 id="chan-title">keyless agent channel</h2>
+      <span class="muted-dark">Every reply the broker sent the agent, scanned for the test password and every session secret the test site minted (plain, URL, hex, base64, 12-character chunks).</span>
+      <div class="big" id="leaks">–</div>
+      <span class="muted-dark" id="scan-sum">Open a session to start.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <span class="muted-dark">Latest replies</span>
+      <div class="log mono" id="log"></div>
+    </div>
+  </section>
+</main>
+<script>
+const TOOLS = [
+  { label: 'Read the password field', code: "document.querySelector('input[type=password]')?.value ?? '(no password field on this page)'" },
+  { label: 'Read cookies', code: 'document.cookie' },
+  { label: 'Read local storage', code: "localStorage.getItem('auth')" },
+  { label: 'Read hidden form fields', code: "[...document.querySelectorAll('input[type=hidden]')].map(i => i.name + '=' + i.value).join(' ')" },
+  { label: 'Read raw HTML', code: 'document.documentElement.outerHTML' },
+  { label: 'Read the page text', code: 'document.body.innerText', ordinary: true }
+];
+const $ = (id) => document.getElementById(id);
+const frame = $('frame');
+let session = null;
+
+function chip(cls, text) {
+  const s = document.createElement('span');
+  s.className = 'chip ' + cls;
+  s.textContent = text;
+  return s;
+}
+function cell(code) {
+  const td = document.createElement('td');
+  td.append(chip('withheld', 'not run'));
+  return td;
+}
+function setCell(td, cls, label, detail) {
+  td.replaceChildren(chip(cls, label));
+  if (detail) {
+    const d = document.createElement('div');
+    d.className = 'res mono';
+    d.textContent = detail;
+    td.append(d);
+  }
+}
+const rows = TOOLS.map((t) => {
+  const tr = document.createElement('tr');
+  const th = document.createElement('td');
+  const name = document.createElement('div');
+  name.style.fontWeight = '600';
+  name.textContent = t.label;
+  const code = document.createElement('div');
+  code.className = 'res mono';
+  code.textContent = t.code;
+  th.append(name, code);
+  const left = cell();
+  const right = cell();
+  tr.append(th, left, right);
+  $('rows').append(tr);
+  return { left, right };
+});
+
+async function getJSON(url, body) {
+  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  return r.json();
+}
+const broker = (method, params) => getJSON('/api/broker', { method, params: Object.assign({ session }, params || {}) });
+
+// Fill into the page
+$('b-fill').onclick = async () => {
+  const doc = frame.contentDocument;
+  const pw = doc.querySelector('input[type=password]');
+  if (!pw) { $('fill-status').textContent = 'No login form on this page. Press Reset.'; return; }
+  const v = await getJSON('/baseline/vault');
+  // What DOM autofill does: set the field values and fire input events.
+  for (const [el, val] of [[doc.querySelector('input[name=username]'), v.username], [pw, v.password]]) {
+    el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  $('fill-status').textContent = 'Filled. The password is now in the page’s form field.';
+};
+$('b-submit').onclick = () => {
+  const f = frame.contentDocument.querySelector('form');
+  if (f) f.submit();
+};
+$('b-reset').onclick = () => {
+  localStorage.removeItem('auth');
+  frame.src = '/baseline/logout';
+  rows.forEach((r) => setCell(r.left, 'withheld', 'not run'));
+};
+frame.addEventListener('load', () => {
+  const p = frame.contentWindow.location.pathname;
+  $('fill-status').textContent = p.endsWith('/app') ? 'Signed in. The agent is in the same page as the session.' : 'Login page loaded. Nothing filled yet.';
+});
+
+async function runFill() {
+  const secrets = Object.values(await getJSON('/baseline/secrets')).filter((s) => typeof s === 'string' && s.length >= 8);
+  TOOLS.forEach((t, i) => {
+    let out;
+    try { out = String(frame.contentWindow.eval(t.code) ?? ''); } catch (e) { out = 'error: ' + e.message; }
+    const hit = secrets.find((s) => out.includes(s));
+    const shown = out.length > 220 ? out.slice(0, 220) + '…' : out;
+    if (hit) {
+      const at = out.indexOf(hit);
+      const around = out.slice(Math.max(0, at - 40), at + hit.length + 40);
+      setCell(rows[i].left, 'exposed', 'Exposed', t.code.includes('outerHTML') ? '…' + around + '…' : shown);
+    } else if (t.ordinary && out) {
+      setCell(rows[i].left, 'visible', 'Visible', shown);
+    } else {
+      setCell(rows[i].left, 'withheld', 'Nothing found', shown || '(empty)');
+    }
+  });
+}
+
+// keyless
+function setState(s) {
+  const el = $('kl-state');
+  el.textContent = s;
+  el.className = 'chip ' + (s === 'active' ? 'visible' : s === 'killed' || s === 'login_failed' ? 'exposed' : 'withheld');
+}
+async function refreshScan() {
+  const s = await getJSON('/api/keyless/scan');
+  $('leaks').textContent = s.leaks.length;
+  $('leaks').style.color = s.leaks.length ? '#F0A27F' : '#8FD1A5';
+  $('scan-sum').textContent = `secrets found on the agent channel · ${s.canaries} test values checked across ${s.messages} replies (${s.bytes.toLocaleString()} bytes)`;
+  $('log').replaceChildren(...s.tail.slice().reverse().map((m) => { const d = document.createElement('div'); d.textContent = m; return d; }));
+}
+function renderSnap(obs) {
+  const items = obs.items || [];
+  const withheld = items.filter((i) => i.name === '[withheld]' || i.value === '[withheld]').length;
+  const snap = $('snap');
+  snap.replaceChildren(...items.slice(0, 40).map((i) => {
+    const d = document.createElement('div');
+    const masked = i.name === '[withheld]' || i.value === '[withheld]';
+    d.textContent = `${i.role} "${i.name}"${i.value ? ' = ' + i.value : ''}`;
+    if (masked) d.style.color = '#A9A79F';
+    return d;
+  }));
+  $('kl-msg').textContent = `${obs.url} · ${items.length} items, ${withheld} withheld`;
+  return { items: items.length, withheld };
+}
+$('b-open').onclick = async () => {
+  $('b-open').disabled = true;
+  $('b-observe').disabled = true;
+  $('snap').replaceChildren();
+  rows.forEach((r) => setCell(r.right, 'withheld', 'not run'));
+  const o = await getJSON('/api/broker', { method: 'session.open' });
+  session = o.session;
+  setState(o.state || 'error');
+  $('kl-status').textContent = 'Broker is filling and submitting the login form…';
+  const sealed = await broker('session.observe');
+  $('kl-msg').textContent = 'Agent asked to observe during login → ' + (sealed.error ? sealed.error.code : 'ok');
+  for (let i = 0; i < 80; i++) {
+    await new Promise((r) => setTimeout(r, 300));
+    const st = await broker('session.status');
+    setState(st.state);
+    if (!['opening', 'sealed'].includes(st.state)) break;
+  }
+  $('b-open').disabled = false;
+  $('b-observe').disabled = false;
+  await observe();
+  $('kl-status').textContent = 'Signed in. The agent has the snapshot only.';
+};
+async function observe() {
+  const obs = await broker('session.observe');
+  if (!obs.error) renderSnap(obs);
+  await refreshScan();
+  return obs;
+}
+$('b-observe').onclick = observe;
+
+async function runKeyless() {
+  if (!session) { rows.forEach((r) => setCell(r.right, 'withheld', 'Open a session first')); return; }
+  for (let i = 0; i < TOOLS.length; i++) {
+    const t = TOOLS[i];
+    if (t.ordinary) {
+      const obs = await broker('session.observe');
+      if (obs.error) { setCell(rows[i].right, 'withheld', 'Refused', obs.error.code); continue; }
+      const c = renderSnap(obs);
+      setCell(rows[i].right, 'visible', 'Visible', `session.observe → ${c.items} items, ${c.withheld} withheld`);
+      continue;
+    }
+    const r = await broker('session.act', { action: 'eval', script: t.code });
+    if (r.error) setCell(rows[i].right, 'withheld', 'Refused', `session.act eval → ${r.error.code}`);
+    else setCell(rows[i].right, 'exposed', 'Answered', JSON.stringify(r));
+  }
+  await refreshScan();
+}
+$('b-run').onclick = async () => {
+  $('b-run').disabled = true;
+  try { await runFill(); await runKeyless(); } finally { $('b-run').disabled = false; }
+};
+refreshScan();
+</script>
+</body>
+</html>

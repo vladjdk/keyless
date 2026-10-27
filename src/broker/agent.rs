@@ -159,6 +159,10 @@ impl Broker {
     pub(super) async fn act(&self, s: &Session, p: Value) -> Result<Value> {
         let sid = s.data.lock().unwrap().page.as_ref().unwrap().sid.clone();
         let action = text(&p["action"]);
+        // Refuse anything outside the action set before looking at refs.
+        if !["navigate", "key", "click", "type"].contains(&action) {
+            return Err(Error::policy("unknown_method"));
+        }
         if action == "navigate" {
             let u = Url::parse(text(&p["url"]))
                 .ok()
