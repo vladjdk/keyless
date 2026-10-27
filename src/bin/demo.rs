@@ -13,7 +13,11 @@ use std::{
 };
 use url::Url;
 
-const PAGE: &str = include_str!("../demo/index.html");
+const PAGES: &[(&str, &str, &str)] = &[(
+    "/",
+    "text/html; charset=utf-8",
+    include_str!("../demo/index.html"),
+)];
 const CHROME_MAC: &str = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const STYLE: &str = "<style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:24px;background:#fff;color:#17181c}\
 h1{font-size:22px;margin:0 0 16px}form{display:flex;flex-direction:column;gap:12px;max-width:320px}\
@@ -164,9 +168,9 @@ async fn run() -> std::io::Result<()> {
             return;
         };
         let path = u.path().to_owned();
-        let response = if path == "/" {
-            Response::new(200, PAGE)
-                .header("Content-Type", "text/html; charset=utf-8")
+        let response = if let Some((_, kind, body)) = PAGES.iter().find(|(p, _, _)| *p == path) {
+            Response::new(200, *body)
+                .header("Content-Type", *kind)
                 .header("Cache-Control", "no-store")
         } else if path.starts_with("/baseline/") {
             baseline(&req, &path, &mut base.lock().unwrap())

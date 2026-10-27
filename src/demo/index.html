@@ -4,328 +4,290 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>keyless demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --ground: #F1F0EB; --card: #FFFFFF; --ink: #17181C; --muted: #5F5E5A; --line: #D9D6CC;
-  --panel: #1B1C21; --panel-ink: #E8E6DF; --panel-line: #3A3B42;
-  --fill: #3453C8; --keyless: #C4501F;
-  --vis-bg: #DCEBDF; --vis-fg: #1F5135;
-  --wh-bg: #E2E0D8; --wh-fg: #33322F;
-  --ex-bg: #F6DAD6; --ex-fg: #7E1D15;
-  --open-bg: #F5E3B8; --open-fg: #5C3E00;
+  --bg: #0D1014; --bar: #090B0E; --line: #1F242C; --surface: #12161C;
+  --ink: #E6EDF3; --dim: #8B949E; --faint: #6E7681;
+  --red: #FF7B72; --red-ink: #FFA198; --red-bg: #4C1D1D;
+  --green: #7EE787; --green-bg: #12361F;
+  --grey-ink: #C9D1D9; --grey-bg: #262C36;
+  --violet: #D2A8FF; --blue: #A5D6FF;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.5 Inter, system-ui, sans-serif; }
-main { max-width: 1320px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 28px; }
-h1, h2 { font-family: 'Space Grotesk', Inter, sans-serif; margin: 0; }
-h1 { font-size: 40px; line-height: 1.1; }
-h2 { font-size: 24px; }
-.sub { color: var(--muted); margin: 6px 0 0; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { display: inline-block; font: 600 12px Inter, sans-serif; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
-.visible { background: var(--vis-bg); color: var(--vis-fg); }
-.withheld { background: var(--wh-bg); color: var(--wh-fg); }
-.exposed { background: var(--ex-bg); color: var(--ex-fg); }
-.open { background: var(--open-bg); color: var(--open-fg); }
-.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap: 24px; }
-.side { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.side header { display: flex; flex-direction: column; gap: 4px; }
-.tag { font: 600 13px Inter, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
-.fill .tag { color: var(--fill); }
-.kl .tag { color: var(--keyless); }
-.side p { margin: 0; color: var(--muted); font-size: 15px; }
-.steps { display: flex; flex-wrap: wrap; gap: 8px; }
-button { font: 600 14px Inter, sans-serif; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
-button.primary { border: 0; color: #fff; }
-.fill button.primary { background: var(--fill); }
-.kl button.primary, button.both { background: var(--keyless); color: #fff; border: 0; }
-button:disabled { opacity: 0.5; cursor: default; }
-iframe { width: 100%; height: 260px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
-.browser { height: 260px; border: 1px dashed var(--panel-line); border-radius: 10px; background: var(--panel); color: var(--panel-ink); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
-.browser .state { font: 600 14px Inter, sans-serif; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; }
-.snap { display: flex; flex-direction: column; gap: 4px; }
-.snap div { overflow-wrap: anywhere; }
-.actor { font-size: 13px; color: var(--muted); }
-.note { font-size: 14px; color: var(--muted); }
-.tools { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.tools-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 860px; }
-th { text-align: left; font: 600 13px Inter, sans-serif; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); }
-th.fill-h { color: var(--fill); }
-th.kl-h { color: var(--keyless); }
-td { padding: 12px; border-bottom: 1px solid #EBE8E0; vertical-align: top; width: 33%; }
-td .res { margin-top: 6px; overflow-wrap: anywhere; }
-.chan { background: var(--panel); color: var(--panel-ink); border-radius: 14px; padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 24px; }
-.chan h2 { color: #fff; font-size: 20px; }
-.big { font: 700 64px/1 'Space Grotesk', Inter, sans-serif; }
-.log { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow: auto; font-size: 12px; }
-.log div { border-bottom: 1px solid var(--panel-line); padding-bottom: 6px; overflow-wrap: anywhere; }
-.muted-dark { color: #C9C7BF; font-size: 14px; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 'JetBrains Mono', ui-monospace, monospace; }
+main { max-width: 1320px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; min-height: 100vh; }
+button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 0 16px; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+button:disabled { opacity: 0.5; cursor: progress; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.modes { display: flex; padding: 4px; gap: 4px; background: var(--bar); border: 1px solid var(--line); border-radius: 10px; }
+.modes button { border: 0; background: transparent; color: var(--dim); }
+.modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); }
+.modes button[aria-pressed="true"].fill { box-shadow: inset 0 -2px 0 var(--red); }
+.modes button[aria-pressed="true"].kl { box-shadow: inset 0 -2px 0 var(--green); }
+.run { background: var(--ink); color: var(--bg); border: 0; font-weight: 700; }
+.stage { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; }
+
+/* Browser window */
+.win { flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; min-height: 520px; }
+.chrome { background: var(--bar); border-bottom: 1px solid var(--line); padding: 10px 14px; display: flex; align-items: center; gap: 14px; }
+.dots { display: flex; gap: 8px; }
+.dots span { width: 12px; height: 12px; border-radius: 50%; background: #30363D; }
+.url { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; color: var(--dim); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 8px; align-items: center; }
+.url b { color: var(--ink); font-weight: 500; }
+.view { flex: 1; position: relative; display: flex; }
+iframe { flex: 1; border: 0; width: 100%; min-height: 460px; background: #fff; }
+.sealed, .snap { position: absolute; inset: 0; background: var(--bg); display: flex; }
+.sealed { flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--dim); }
+.sealed strong { color: var(--ink); font-size: 28px; }
+.snap { flex-direction: column; padding: 20px 24px; gap: 2px; overflow: auto; font-size: 14px; }
+.snap .role { color: var(--violet); }
+.snap .name { color: var(--blue); }
+
+/* Agent panel */
+.agent { flex: 1 1 380px; max-width: 480px; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bar); }
+.agent header { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); }
+.busy .pulse { background: var(--blue); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .busy .pulse { animation: none; } }
+.log { flex: 1; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; overflow: auto; min-height: 300px; }
+.log .empty { color: var(--faint); }
+.call { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.call .head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.call .fn { color: var(--ink); }
+.call .fn i { font-style: normal; color: var(--violet); }
+.call .out { color: var(--dim); font-size: 13px; overflow-wrap: anywhere; }
+.call.exposed .out { color: var(--red-ink); }
+.call.visible .out { color: var(--green); }
+.event { color: var(--faint); font-size: 13px; padding: 2px 2px; }
+.tag { flex: none; font-size: 12px; padding: 2px 8px; border-radius: 6px; }
+.tag.exposed { background: var(--red-bg); color: var(--red-ink); }
+.tag.refused { background: var(--grey-bg); color: var(--grey-ink); }
+.tag.visible { background: var(--green-bg); color: var(--green); }
+.tally { padding: 18px; border-top: 1px solid var(--line); font-size: 30px; font-weight: 700; min-height: 84px; display: flex; flex-direction: column; justify-content: center; }
+.tally small { font-size: 13px; font-weight: 400; color: var(--dim); }
 </style>
 </head>
 <body>
 <main>
-  <div>
-    <h1>What can the agent see?</h1>
-    <p class="sub">The same test password, signed in two ways. Everything below runs live on this machine against local test sites.</p>
-  </div>
-  <div class="legend" aria-label="Legend">
-    <span class="chip visible">Visible: ordinary page content</span>
-    <span class="chip withheld">Withheld or refused</span>
-    <span class="chip exposed">Exposed: a secret reached the agent</span>
-    <span class="chip open">Note</span>
+  <div class="top">
+    <div class="modes" role="group" aria-label="Mode">
+      <button type="button" class="fill" id="m-fill" aria-pressed="true">fill into the page</button>
+      <button type="button" class="kl" id="m-kl" aria-pressed="false">keyless</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="button" id="reset">reset</button>
+      <button type="button" class="run" id="run">▶ run</button>
+    </div>
   </div>
 
-  <div class="cols">
-    <section class="side fill" aria-labelledby="fill-title">
-      <header>
-        <span class="tag">Fill into the page</span>
-        <h2 id="fill-title">The password manager types into the site</h2>
-        <p>The password goes into the site's own form field. The agent works in that same page, with page tools.</p>
-      </header>
-      <div class="steps">
-        <button class="primary" id="b-fill">1 · Password manager fills</button>
-        <button id="b-submit">2 · Sign in</button>
-        <button id="b-reset">Reset</button>
+  <div class="stage">
+    <section class="win" aria-label="Browser">
+      <div class="chrome">
+        <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="url" id="url"><span id="url-text">localhost:8765/baseline/login</span></div>
       </div>
-      <iframe id="frame" src="/baseline/login" title="Fill-into-page test site"></iframe>
-      <span class="actor" id="fill-status">Login page loaded. Nothing filled yet.</span>
+      <div class="view">
+        <iframe id="frame" src="/baseline/logout" title="Test site"></iframe>
+        <div class="sealed" id="sealed" hidden>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          <strong id="sealed-title">sealed</strong>
+          <span id="sealed-sub">broker's browser · agent has no access</span>
+        </div>
+        <div class="snap" id="snap" hidden aria-label="What the agent sees"></div>
+      </div>
     </section>
 
-    <section class="side kl" aria-labelledby="kl-title">
-      <header>
-        <span class="tag">keyless</span>
-        <h2 id="kl-title">The broker signs in, sealed</h2>
-        <p>The broker fills the password in its own browser. The agent gets a filtered snapshot and six actions.</p>
-      </header>
-      <div class="steps">
-        <button class="primary" id="b-open">1 · Open session</button>
-        <button id="b-observe" disabled>2 · Observe</button>
-      </div>
-      <div class="browser" aria-live="polite">
-        <div class="state"><span>Session</span><span class="chip withheld" id="kl-state">not open</span></div>
-        <div class="muted-dark" id="kl-msg">The agent never gets a handle to the broker's browser.</div>
-        <div class="snap mono" id="snap"></div>
-      </div>
-      <span class="actor" id="kl-status">Waiting.</span>
+    <section class="agent" id="agent" aria-label="Agent">
+      <header><span class="pulse" aria-hidden="true"></span><span>agent</span></header>
+      <div class="log" id="log" aria-live="polite"><span class="empty">▶ run</span></div>
+      <div class="tally" id="tally" aria-live="polite"></div>
     </section>
   </div>
-
-  <section class="tools" aria-labelledby="tools-title">
-    <div class="tools-head">
-      <div>
-        <h2 id="tools-title">The same agent tools, both ways</h2>
-        <p class="note">Left: each line actually runs in the test page. Right: each one is sent to the broker as an agent request.</p>
-      </div>
-      <button class="both" id="b-run">Run agent tools on both</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th scope="col">Agent tool</th><th scope="col" class="fill-h">Fill into the page</th><th scope="col" class="kl-h">keyless</th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-    <p class="note"><span class="chip open">Note</span> The session cookie is HttpOnly, so page scripts can't read it. An agent that drives the browser over the DevTools protocol can (<span class="mono">Network.getAllCookies</span>).</p>
-  </section>
-
-  <section class="chan" aria-labelledby="chan-title">
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <h2 id="chan-title">keyless agent channel</h2>
-      <span class="muted-dark">Every reply the broker sent the agent, scanned for the test password and every session secret the test site minted (plain, URL, hex, base64, 12-character chunks).</span>
-      <div class="big" id="leaks">–</div>
-      <span class="muted-dark" id="scan-sum">Open a session to start.</span>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
-      <span class="muted-dark">Latest replies</span>
-      <div class="log mono" id="log"></div>
-    </div>
-  </section>
 </main>
 <script>
-const TOOLS = [
-  { label: 'Read the password field', code: "document.querySelector('input[type=password]')?.value ?? '(no password field on this page)'" },
-  { label: 'Read cookies', code: 'document.cookie' },
-  { label: 'Read local storage', code: "localStorage.getItem('auth')" },
-  { label: 'Read hidden form fields', code: "[...document.querySelectorAll('input[type=hidden]')].map(i => i.name + '=' + i.value).join(' ')" },
-  { label: 'Read raw HTML', code: 'document.documentElement.outerHTML' },
-  { label: 'Read the page text', code: 'document.body.innerText', ordinary: true }
-];
 const $ = (id) => document.getElementById(id);
 const frame = $('frame');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pause = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+const READS = [
+  { fn: 'password.value', code: "document.querySelector('input[type=password]')?.value ?? ''" },
+  { fn: 'document.cookie', code: 'document.cookie' },
+  { fn: 'localStorage.auth', code: "localStorage.getItem('auth') ?? ''" },
+  { fn: 'input[type=hidden]', code: "[...document.querySelectorAll('input[type=hidden]')].map(i => i.name + '=' + i.value).join(' ')" },
+];
+let mode = 'fill';
 let session = null;
-
-function chip(cls, text) {
-  const s = document.createElement('span');
-  s.className = 'chip ' + cls;
-  s.textContent = text;
-  return s;
-}
-function cell(code) {
-  const td = document.createElement('td');
-  td.append(chip('withheld', 'not run'));
-  return td;
-}
-function setCell(td, cls, label, detail) {
-  td.replaceChildren(chip(cls, label));
-  if (detail) {
-    const d = document.createElement('div');
-    d.className = 'res mono';
-    d.textContent = detail;
-    td.append(d);
-  }
-}
-const rows = TOOLS.map((t) => {
-  const tr = document.createElement('tr');
-  const th = document.createElement('td');
-  const name = document.createElement('div');
-  name.style.fontWeight = '600';
-  name.textContent = t.label;
-  const code = document.createElement('div');
-  code.className = 'res mono';
-  code.textContent = t.code;
-  th.append(name, code);
-  const left = cell();
-  const right = cell();
-  tr.append(th, left, right);
-  $('rows').append(tr);
-  return { left, right };
-});
 
 async function getJSON(url, body) {
   const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
   return r.json();
 }
 const broker = (method, params) => getJSON('/api/broker', { method, params: Object.assign({ session }, params || {}) });
+const clip = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
 
-// Fill into the page
-$('b-fill').onclick = async () => {
-  const doc = frame.contentDocument;
-  const pw = doc.querySelector('input[type=password]');
-  if (!pw) { $('fill-status').textContent = 'No login form on this page. Press Reset.'; return; }
-  const v = await getJSON('/baseline/vault');
-  // What DOM autofill does: set the field values and fire input events.
-  for (const [el, val] of [[doc.querySelector('input[name=username]'), v.username], [pw, v.password]]) {
-    el.value = val;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
+function event(text) {
+  const d = document.createElement('div');
+  d.className = 'event';
+  d.textContent = text;
+  add(d);
+}
+function call(fn, out, kind) {
+  const d = document.createElement('div');
+  d.className = 'call ' + kind;
+  const head = document.createElement('div');
+  head.className = 'head';
+  const f = document.createElement('span');
+  f.className = 'fn';
+  const verb = document.createElement('i');
+  verb.textContent = fn.verb;
+  f.append(verb, document.createTextNode(fn.arg ? '(' + fn.arg + ')' : '()'));
+  const tag = document.createElement('span');
+  tag.className = 'tag ' + kind;
+  tag.textContent = kind;
+  head.append(f, tag);
+  const o = document.createElement('div');
+  o.className = 'out';
+  o.textContent = '→ ' + out;
+  d.append(head, o);
+  add(d);
+}
+function add(el) {
+  const log = $('log');
+  log.querySelector('.empty')?.remove();
+  log.append(el);
+  log.scrollTop = log.scrollHeight;
+}
+function setUrl(text) { $('url-text').textContent = text; }
+function tally(ok, text, sub) {
+  const t = $('tally');
+  t.replaceChildren(document.createTextNode((ok ? '✓ ' : '✗ ') + text));
+  t.style.color = ok ? 'var(--green)' : 'var(--red)';
+  if (sub) { const s = document.createElement('small'); s.textContent = sub; t.append(s); }
+}
+
+function reset() {
+  $('log').innerHTML = '<span class="empty">▶ run</span>';
+  $('tally').replaceChildren();
+  $('snap').hidden = true;
+  if (mode === 'fill') {
+    try { localStorage.removeItem('auth'); } catch (e) {}
+    $('sealed').hidden = true;
+    frame.hidden = false;
+    frame.src = '/baseline/logout';
+  } else {
+    frame.hidden = true;
+    $('sealed').hidden = false;
+    $('sealed-title').textContent = 'no session';
+    $('sealed-sub').textContent = "broker's browser · agent has no access";
+    setUrl('keyless · broker session');
   }
-  $('fill-status').textContent = 'Filled. The password is now in the page’s form field.';
-};
-$('b-submit').onclick = () => {
-  const f = frame.contentDocument.querySelector('form');
-  if (f) f.submit();
-};
-$('b-reset').onclick = () => {
-  localStorage.removeItem('auth');
-  frame.src = '/baseline/logout';
-  rows.forEach((r) => setCell(r.left, 'withheld', 'not run'));
-};
+}
 frame.addEventListener('load', () => {
-  const p = frame.contentWindow.location.pathname;
-  $('fill-status').textContent = p.endsWith('/app') ? 'Signed in. The agent is in the same page as the session.' : 'Login page loaded. Nothing filled yet.';
+  if (mode === 'fill') setUrl(frame.contentWindow.location.host + frame.contentWindow.location.pathname);
 });
+const loaded = () => new Promise((r) => frame.addEventListener('load', r, { once: true }));
 
 async function runFill() {
-  const secrets = Object.values(await getJSON('/baseline/secrets')).filter((s) => typeof s === 'string' && s.length >= 8);
-  TOOLS.forEach((t, i) => {
-    let out;
-    try { out = String(frame.contentWindow.eval(t.code) ?? ''); } catch (e) { out = 'error: ' + e.message; }
-    const hit = secrets.find((s) => out.includes(s));
-    const shown = out.length > 220 ? out.slice(0, 220) + '…' : out;
-    if (hit) {
-      const at = out.indexOf(hit);
-      const around = out.slice(Math.max(0, at - 40), at + hit.length + 40);
-      setCell(rows[i].left, 'exposed', 'Exposed', t.code.includes('outerHTML') ? '…' + around + '…' : shown);
-    } else if (t.ordinary && out) {
-      setCell(rows[i].left, 'visible', 'Visible', shown);
-    } else {
-      setCell(rows[i].left, 'withheld', 'Nothing found', shown || '(empty)');
-    }
-  });
-}
-
-// keyless
-function setState(s) {
-  const el = $('kl-state');
-  el.textContent = s;
-  el.className = 'chip ' + (s === 'active' ? 'visible' : s === 'killed' || s === 'login_failed' ? 'exposed' : 'withheld');
-}
-async function refreshScan() {
-  const s = await getJSON('/api/keyless/scan');
-  $('leaks').textContent = s.leaks.length;
-  $('leaks').style.color = s.leaks.length ? '#F0A27F' : '#8FD1A5';
-  $('scan-sum').textContent = `secrets found on the agent channel · ${s.canaries} test values checked across ${s.messages} replies (${s.bytes.toLocaleString()} bytes)`;
-  $('log').replaceChildren(...s.tail.slice().reverse().map((m) => { const d = document.createElement('div'); d.textContent = m; return d; }));
-}
-function renderSnap(obs) {
-  const items = obs.items || [];
-  const withheld = items.filter((i) => i.name === '[withheld]' || i.value === '[withheld]').length;
-  const snap = $('snap');
-  snap.replaceChildren(...items.slice(0, 40).map((i) => {
-    const d = document.createElement('div');
-    const masked = i.name === '[withheld]' || i.value === '[withheld]';
-    d.textContent = `${i.role} "${i.name}"${i.value ? ' = ' + i.value : ''}`;
-    if (masked) d.style.color = '#A9A79F';
-    return d;
-  }));
-  $('kl-msg').textContent = `${obs.url} · ${items.length} items, ${withheld} withheld`;
-  return { items: items.length, withheld };
-}
-$('b-open').onclick = async () => {
-  $('b-open').disabled = true;
-  $('b-observe').disabled = true;
-  $('snap').replaceChildren();
-  rows.forEach((r) => setCell(r.right, 'withheld', 'not run'));
-  const o = await getJSON('/api/broker', { method: 'session.open' });
-  session = o.session;
-  setState(o.state || 'error');
-  $('kl-status').textContent = 'Broker is filling and submitting the login form…';
-  const sealed = await broker('session.observe');
-  $('kl-msg').textContent = 'Agent asked to observe during login → ' + (sealed.error ? sealed.error.code : 'ok');
-  for (let i = 0; i < 80; i++) {
-    await new Promise((r) => setTimeout(r, 300));
-    const st = await broker('session.status');
-    setState(st.state);
-    if (!['opening', 'sealed'].includes(st.state)) break;
+  const doc = frame.contentDocument;
+  const v = await getJSON('/baseline/vault');
+  for (const [el, val] of [[doc.querySelector('input[name=username]'), v.username], [doc.querySelector('input[type=password]'), v.password]]) {
+    el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  $('b-open').disabled = false;
-  $('b-observe').disabled = false;
-  await observe();
-  $('kl-status').textContent = 'Signed in. The agent has the snapshot only.';
-};
-async function observe() {
-  const obs = await broker('session.observe');
-  if (!obs.error) renderSnap(obs);
-  await refreshScan();
-  return obs;
+  event('password manager filled the form');
+  await pause(900);
+  const hits = new Set();
+  const read = async (r) => {
+    const secrets = Object.values(await getJSON('/baseline/secrets')).filter((s) => typeof s === 'string' && s.length >= 8);
+    let out;
+    try { out = String(frame.contentWindow.eval(r.code) ?? ''); } catch (e) { out = e.message; }
+    const hit = secrets.find((s) => out.includes(s));
+    if (hit) hits.add(hit);
+    call({ verb: 'js', arg: r.fn }, out ? clip(out, 60) : '""', hit ? 'exposed' : 'refused');
+    await pause(700);
+  };
+  await read(READS[0]);
+  const done = loaded();
+  frame.contentDocument.querySelector('form').submit();
+  await done;
+  event('signed in');
+  await pause(700);
+  for (const r of READS.slice(1)) await read(r);
+  tally(false, `${hits.size} secrets exposed`);
 }
-$('b-observe').onclick = observe;
 
 async function runKeyless() {
-  if (!session) { rows.forEach((r) => setCell(r.right, 'withheld', 'Open a session first')); return; }
-  for (let i = 0; i < TOOLS.length; i++) {
-    const t = TOOLS[i];
-    if (t.ordinary) {
-      const obs = await broker('session.observe');
-      if (obs.error) { setCell(rows[i].right, 'withheld', 'Refused', obs.error.code); continue; }
-      const c = renderSnap(obs);
-      setCell(rows[i].right, 'visible', 'Visible', `session.observe → ${c.items} items, ${c.withheld} withheld`);
-      continue;
-    }
-    const r = await broker('session.act', { action: 'eval', script: t.code });
-    if (r.error) setCell(rows[i].right, 'withheld', 'Refused', `session.act eval → ${r.error.code}`);
-    else setCell(rows[i].right, 'exposed', 'Answered', JSON.stringify(r));
+  const o = await getJSON('/api/broker', { method: 'session.open' });
+  session = o.session;
+  $('sealed-title').textContent = 'sealed';
+  $('sealed-sub').textContent = 'broker is signing in';
+  event('broker signing in');
+  const early = await broker('session.observe');
+  call({ verb: 'observe' }, early.error ? early.error.code : 'ok', early.error ? 'refused' : 'visible');
+  for (let i = 0; i < 100; i++) {
+    await pause(300);
+    const st = await broker('session.status');
+    if (!['opening', 'sealed'].includes(st.state)) break;
   }
-  await refreshScan();
+  event('signed in');
+  const obs = await broker('session.observe');
+  if (!obs.error) {
+    const items = obs.items || [];
+    $('sealed').hidden = true;
+    const snap = $('snap');
+    snap.replaceChildren(...items.filter((i) => i.name.trim()).map((i) => {
+      const d = document.createElement('div');
+      const role = document.createElement('span');
+      role.className = 'role';
+      role.textContent = i.role + ' ';
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = JSON.stringify(i.name);
+      d.append(role, name);
+      return d;
+    }));
+    snap.hidden = false;
+    setUrl('agent view · ' + obs.url.replace(/^https?:\/\//, ''));
+    call({ verb: 'observe' }, `${items.length} items`, 'visible');
+  } else {
+    call({ verb: 'observe' }, obs.error.code, 'refused');
+  }
+  await pause(700);
+  for (const r of READS) {
+    const res = await broker('session.act', { action: 'eval', script: r.code });
+    call({ verb: 'js', arg: r.fn }, res.error ? res.error.code : JSON.stringify(res), res.error ? 'refused' : 'exposed');
+    await pause(500);
+  }
+  const s = await getJSON('/api/keyless/scan');
+  tally(s.leaks.length === 0, `${s.leaks.length} secrets exposed`, `${s.canaries} test values · ${s.messages} replies scanned`);
 }
-$('b-run').onclick = async () => {
-  $('b-run').disabled = true;
-  try { await runFill(); await runKeyless(); } finally { $('b-run').disabled = false; }
+
+function setMode(m) {
+  mode = m;
+  $('m-fill').setAttribute('aria-pressed', m === 'fill');
+  $('m-kl').setAttribute('aria-pressed', m === 'keyless');
+  reset();
+}
+$('m-fill').onclick = () => setMode('fill');
+$('m-kl').onclick = () => setMode('keyless');
+$('reset').onclick = reset;
+$('run').onclick = async () => {
+  const btns = document.querySelectorAll('button');
+  btns.forEach((b) => (b.disabled = true));
+  $('agent').classList.add('busy');
+  reset();
+  if (mode === 'fill') await loaded();
+  try { mode === 'fill' ? await runFill() : await runKeyless(); }
+  catch (e) { event('error: ' + e.message); }
+  finally {
+    btns.forEach((b) => (b.disabled = false));
+    $('agent').classList.remove('busy');
+  }
 };
-refreshScan();
 </script>
 </body>
 </html>
