@@ -72,7 +72,8 @@ fn baseline(req: &Request, path: &str, st: &mut Baseline) -> Response {
             {
                 return html("Sign in failed", "<h1>Sign in failed</h1>");
             }
-            let s = json!({"sid": random_hex(16), "csrf": random_hex(12), "access": random_hex(20)});
+            let s =
+                json!({"sid": random_hex(16), "csrf": random_hex(12), "access": random_hex(20)});
             let sid = s["sid"].as_str().unwrap().to_owned();
             let csrf = s["csrf"].as_str().unwrap().to_owned();
             st.sessions.insert(sid.clone(), s.clone());
