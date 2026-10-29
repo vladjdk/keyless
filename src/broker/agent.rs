@@ -100,7 +100,7 @@ impl Broker {
                         item["value"] = node["value"]["value"].clone();
                     }
                 }
-                refs.insert(reference, (backend, role.into()));
+                refs.insert(reference, (backend, role.into(), String::new()));
                 items.push(item);
             }
         }
@@ -127,13 +127,15 @@ impl Broker {
             let d = s.data.lock().unwrap();
             matches(&d.vault, &d.secrets, &fields)
         };
-        let hit = match hit {
+        let mut hit = match hit {
             Ok(v) => v,
             Err(code) => {
                 self.destroy(s, "killed");
                 return Err(Error::policy(code));
             }
         };
+        // A token the site just minted is unknown to the matcher; catch it by shape.
+        hit.extend(gate::minted(u.path(), &fields));
         for i in &hit {
             if let Some((n, key)) = slots[*i] {
                 items[n][key] = "[withheld]".into();
@@ -146,10 +148,21 @@ impl Broker {
             .unwrap()
             .masks
             .push(json!({"path":u.path(),"masked":hit.len(),"items":items.len()}));
+        // Labels the gate passes on to the classifier and owner are the masked ones.
+        for item in &items {
+            if let Some(r) = refs.get_mut(text(&item["ref"])) {
+                r.2 = text(&item["name"]).into();
+            }
+        }
         let snapshot = {
             let mut d = s.data.lock().unwrap();
             d.snapshot += 1;
             d.refs = refs;
+            d.title = items
+                .iter()
+                .find(|i| i["role"] == "page")
+                .map(|i| text(&i["name"]).to_owned())
+                .unwrap_or_default();
             d.snapshot
         };
         Ok(
@@ -157,22 +170,39 @@ impl Broker {
         )
     }
     pub(super) async fn act(&self, s: &Session, p: Value) -> Result<Value> {
-        let sid = s.data.lock().unwrap().page.as_ref().unwrap().sid.clone();
+        let sid = {
+            let mut d = s.data.lock().unwrap();
+            d.refusals.clear();
+            d.page.as_ref().unwrap().sid.clone()
+        };
+        let out = self.act_inner(s, &sid, &p).await?;
+        // Tell the agent which of its requests the gate stopped, as enum codes only.
+        let mut refused = std::mem::take(&mut s.data.lock().unwrap().refusals);
+        if refused.is_empty() {
+            return Ok(out);
+        }
+        refused.dedup();
+        Ok(json!({"ok": true, "refused": refused}))
+    }
+    async fn act_inner(&self, s: &Session, sid: &str, p: &Value) -> Result<Value> {
+        let sid = sid.to_owned();
         let action = text(&p["action"]);
         if action == "navigate" {
             let u = Url::parse(text(&p["url"]))
                 .ok()
                 .filter(|u| self.permits(u))
                 .ok_or_else(|| Error::policy("denied_by_policy"))?;
+            s.data.lock().unwrap().clicked.clear();
             self.goto(s, &sid, u.as_str()).await?;
             return Ok(json!({"ok":true}));
         }
         if action == "key" {
+            s.data.lock().unwrap().clicked.clear();
             self.key(s, &sid, text(&p["key"])).await?;
             self.settle(s, &sid).await;
             return Ok(json!({"ok":true}));
         }
-        let (backend, role) = {
+        let (backend, role, label) = {
             let d = s.data.lock().unwrap();
             if p["snapshot"].as_u64() != Some(d.snapshot) {
                 return Err(Error::policy("stale_ref"));
@@ -180,11 +210,12 @@ impl Broker {
             d.refs
                 .get(text(&p["ref"]))
                 .cloned()
-                .filter(|(b, _)| *b != 0)
+                .filter(|(b, _, _)| *b != 0)
                 .ok_or_else(|| Error::policy("stale_ref"))?
         };
         let cdp = cdp(s)?;
         if action == "click" {
+            s.data.lock().unwrap().clicked = label;
             cdp.send(
                 "DOM.scrollIntoViewIfNeeded",
                 json!({"backendNodeId":backend}),

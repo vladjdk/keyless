@@ -34,4 +34,6 @@ pub mod diagrams;
 pub mod fixture;
 pub mod harness;
 pub mod http;
+#[cfg(feature = "jev")]
+pub mod jev;
 pub mod secrets;

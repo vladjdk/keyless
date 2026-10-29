@@ -48,12 +48,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:49528/app",
+        "detail": "http://localhost:61386/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:49528/invoices",
+        "detail": "http://localhost:61386/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -65,7 +65,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:49528/echo",
+        "detail": "http://localhost:61386/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -75,18 +75,33 @@
         "pass": true
       },
       {
+        "detail": "[withheld]",
+        "name": "owner-approved token page reached",
+        "pass": true
+      },
+      {
         "detail": null,
         "name": "agent sees its own typed value",
         "pass": true
       },
       {
-        "detail": "http://localhost:49528/search",
+        "detail": "http://localhost:61386/search",
         "name": "search (GET) works",
         "pass": true
       },
       {
         "detail": null,
         "name": "POST blocked in safe-methods",
+        "pass": true
+      },
+      {
+        "detail": {
+          "ok": true,
+          "refused": [
+            "needs_owner"
+          ]
+        },
+        "name": "state-changing GET labelled 'Confirm' needs the owner",
         "pass": true
       },
       {
@@ -194,6 +209,16 @@
       },
       {
         "detail": [],
+        "name": "new token on an approved credential page is withheld",
+        "pass": true
+      },
+      {
+        "detail": 3,
+        "name": "owner was asked about escalated requests",
+        "pass": true
+      },
+      {
+        "detail": [],
         "name": "broker has no internal errors",
         "pass": true
       }
@@ -201,41 +226,42 @@
     "dialogsDropped": 1,
     "egress": {
       "attackerHits": {
-        "websocket /ws": 13
+        "websocket /ws": 14
       },
-      "attackerTcpConnections": 17,
-      "fixtureWebSocketUpgrades": 13,
+      "attackerTcpConnections": 18,
+      "fixtureWebSocketUpgrades": 14,
       "forbidden": {
-        "GET Document": 1,
-        "GET Image": 13,
-        "GET XHR": 13,
+        "GET Document": 2,
+        "GET Image": 14,
+        "GET Script": 5,
+        "GET XHR": 14,
         "POST Document": 1,
-        "POST Ping": 13
+        "POST Ping": 14
       },
       "interceptedResourceTypes": {
-        "Document": 60,
-        "Image": 15,
+        "Document": 63,
+        "Image": 16,
         "Other": 30,
-        "Ping": 13,
-        "XHR": 17
+        "Ping": 14,
+        "Script": 5,
+        "XHR": 18
       },
       "proxyDenied": null
     },
     "falseTrips": {
-      "benignObservations": 15,
+      "benignObservations": 16,
       "detail": [],
       "withMasks": 0
     },
     "implementation": "rust",
     "leaks": [],
     "notClaimed": {
-      "renderedApiTokenVisible": true,
-      "stateChangedByGet": true,
+      "unlabelledStateChangingGet": true,
       "xssReversedCookieVisible": true
     },
     "profile": "development",
     "proxy": false,
-    "tapBytes": 30056
+    "tapBytes": 33806
   },
   {
     "axProbe": [
@@ -286,12 +312,12 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:49801/app",
+        "detail": "http://localhost:61603/app",
         "name": "dashboard readable",
         "pass": true
       },
       {
-        "detail": "http://localhost:49801/invoices",
+        "detail": "http://localhost:61603/invoices",
         "name": "read task: invoice table visible after click",
         "pass": true
       },
@@ -303,7 +329,7 @@
         "pass": true
       },
       {
-        "detail": "http://localhost:49801/echo",
+        "detail": "http://localhost:61603/echo",
         "name": "echo page reached and still readable",
         "pass": true
       },
@@ -313,18 +339,33 @@
         "pass": true
       },
       {
+        "detail": "[withheld]",
+        "name": "owner-approved token page reached",
+        "pass": true
+      },
+      {
         "detail": null,
         "name": "agent sees its own typed value",
         "pass": true
       },
       {
-        "detail": "http://localhost:49801/search",
+        "detail": "http://localhost:61603/search",
         "name": "search (GET) works",
         "pass": true
       },
       {
         "detail": null,
         "name": "POST blocked in safe-methods",
+        "pass": true
+      },
+      {
+        "detail": {
+          "ok": true,
+          "refused": [
+            "needs_owner"
+          ]
+        },
+        "name": "state-changing GET labelled 'Confirm' needs the owner",
         "pass": true
       },
       {
@@ -432,6 +473,16 @@
       },
       {
         "detail": [],
+        "name": "new token on an approved credential page is withheld",
+        "pass": true
+      },
+      {
+        "detail": 3,
+        "name": "owner was asked about escalated requests",
+        "pass": true
+      },
+      {
+        "detail": [],
         "name": "broker has no internal errors",
         "pass": true
       },
@@ -452,38 +503,39 @@
       "attackerTcpConnections": 0,
       "fixtureWebSocketUpgrades": 0,
       "forbidden": {
-        "GET Document": 1,
-        "GET Image": 13,
-        "GET XHR": 13,
+        "GET Document": 2,
+        "GET Image": 14,
+        "GET Script": 5,
+        "GET XHR": 14,
         "POST Document": 1,
-        "POST Ping": 13
+        "POST Ping": 14
       },
       "interceptedResourceTypes": {
-        "Document": 60,
-        "Image": 15,
+        "Document": 63,
+        "Image": 16,
         "Other": 30,
-        "Ping": 13,
-        "XHR": 17
+        "Ping": 14,
+        "Script": 5,
+        "XHR": 18
       },
       "proxyDenied": {
-        "connect": 153,
+        "connect": 128,
         "http": 5
       }
     },
     "falseTrips": {
-      "benignObservations": 15,
+      "benignObservations": 16,
       "detail": [],
       "withMasks": 0
     },
     "implementation": "rust",
     "leaks": [],
     "notClaimed": {
-      "renderedApiTokenVisible": true,
-      "stateChangedByGet": true,
+      "unlabelledStateChangingGet": true,
       "xssReversedCookieVisible": true
     },
     "profile": "development",
     "proxy": true,
-    "tapBytes": 30056
+    "tapBytes": 33841
   }
 ]

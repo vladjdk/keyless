@@ -1,6 +1,6 @@
 use crate::{
     Error, Result,
-    broker::{Broker, Credential},
+    broker::{Approver, Boxed, Broker, Credential, Gate, Summary},
     fixture::{Attacker, BAD, Fixture, GOOD, Proxy, USER},
     sleep, text,
 };
@@ -192,6 +192,13 @@ fn counts(keys: impl Iterator<Item = String>) -> BTreeMap<String, usize> {
     }
     m
 }
+/// Stand-in owner for the fixture run: approves the token page, refuses everything else.
+struct Owner;
+impl Approver for Owner {
+    fn approve<'a>(&'a self, s: &'a Summary, _: &'a str) -> Boxed<'a, bool> {
+        Box::pin(async move { s.path == "/settings/token" })
+    }
+}
 pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
     let attacker = Attacker::start().map_err(|e| Error::internal(e.to_string()))?;
     let fixture = Fixture::start(attacker.origin()).map_err(|e| Error::internal(e.to_string()))?;
@@ -223,15 +230,22 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
                 login_url: format!("{origin}{path}"),
                 post_login_url: format!("{origin}/app"),
                 success,
+                ..Default::default()
             },
         )
     })
     .collect();
-    let broker = Broker::new(
+    // The owner approves the token page and nothing else, so the run covers both an approved
+    // credential page (its new token must be withheld) and refused ones.
+    let broker = Broker::with_gate(
         chrome.into(),
         credentials,
         allowed,
         proxy.as_ref().map(|p| p.server.port),
+        Gate {
+            approver: Some(Arc::new(Owner)),
+            ..Default::default()
+        },
     );
     let _shutdown = Shutdown(broker.clone());
     let b = &broker;
@@ -304,6 +318,14 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
         obs = home(b, s, &origin).await;
         click(b, s, &obs, "link", link).await?;
         obs = observe(b, s).await;
+        if label == "token" {
+            check(
+                &mut checks,
+                "owner-approved token page reached",
+                find(&obs, "heading", "API tokens").is_some(),
+                obs["url"].clone(),
+            );
+        }
         if label == "echo" {
             check(
                 &mut checks,
@@ -351,9 +373,18 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
         Value::Null,
     );
     obs = home(b, s, &origin).await;
-    click(b, s, &obs, "link", "Confirm email").await?;
+    let confirm = click(b, s, &obs, "link", "Confirm email").await?;
     sleep(200).await;
-    let mutated = fixture.state.lock().unwrap().mutated;
+    check(
+        &mut checks,
+        "state-changing GET labelled 'Confirm' needs the owner",
+        !fixture.state.lock().unwrap().mutated && confirm["refused"] == json!(["needs_owner"]),
+        confirm,
+    );
+    obs = home(b, s, &origin).await;
+    click(b, s, &obs, "link", "Sync preferences").await?;
+    sleep(200).await;
+    let synced = fixture.state.lock().unwrap().synced;
     obs = home(b, s, &origin).await;
     click(b, s, &obs, "link", "Partner portal").await?;
     sleep(400).await;
@@ -528,6 +559,19 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
         counts(denied.iter().map(|v| text(&v["kind"]).to_owned()))
     });
     let scanned = canaries.iter().filter(|c| c["cls"] != "rendered").count();
+    check(
+        &mut checks,
+        "new token on an approved credential page is withheld",
+        info.is_empty(),
+        json!(info),
+    );
+    let asked = diag.audit.iter().filter(|a| !a["reason"].is_null()).count();
+    check(
+        &mut checks,
+        "owner was asked about escalated requests",
+        asked >= 2,
+        json!(asked),
+    );
     // Extra regression gates, in addition to every original hostile-agent case.
     check(
         &mut checks,
@@ -551,7 +595,7 @@ pub async fn run_once(chrome: &str, use_proxy: bool) -> Result<Value> {
     }
     Ok(
         json!({"implementation":"rust","profile":"development","proxy":use_proxy,"checks":checks,"leaks":leaks,"canariesScanned":scanned,"tapBytes":raw.len(),
-        "notClaimed":{"renderedApiTokenVisible":!info.is_empty(),"xssReversedCookieVisible":reversed,"stateChangedByGet":mutated},
+        "notClaimed":{"xssReversedCookieVisible":reversed,"unlabelledStateChangingGet":synced},
         "egress":{"attackerHits":attacker_kinds,"attackerTcpConnections":attacker_state.connections,"fixtureWebSocketUpgrades":fixture.state.lock().unwrap().ws_upgrades,"proxyDenied":proxy_denied,"interceptedResourceTypes":diag.resource_types,"forbidden":forbidden},
         "falseTrips":{"benignObservations":benign.len(),"withMasks":with_masks.len(),"detail":with_masks},"axProbe":diag.ax_probe,"dialogsDropped":diag.dialogs_dropped,"brokerErrors":diag.errors}),
     )

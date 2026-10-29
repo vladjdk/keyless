@@ -20,6 +20,7 @@ async fn classic_login_unseals_after_fresh_tab_swap() {
                 login_url: format!("{}/login", f.origin()),
                 post_login_url: format!("{}/app", f.origin()),
                 success: json!({"path":"/app"}),
+                ..Default::default()
             },
         )]),
         BTreeSet::from([f.host()]),

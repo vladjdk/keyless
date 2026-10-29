@@ -26,10 +26,12 @@ impl Broker {
             .send("DOM.getDocument", json!({"depth": 0}), Some(&login.sid))
             .await?;
         let mut ids = [0; 2];
-        for (id, selector) in ids
-            .iter_mut()
-            .zip(["input[name=username]", "input[type=password]"])
-        {
+        let user_selector = s
+            .cred
+            .username_selector
+            .as_deref()
+            .unwrap_or("input[name=username]");
+        for (id, selector) in ids.iter_mut().zip([user_selector, "input[type=password]"]) {
             let q = json!({"nodeId": doc["root"]["nodeId"], "selector": selector});
             let r = cdp.send("DOM.querySelector", q, Some(&login.sid)).await?;
             *id = r["nodeId"].as_u64().unwrap_or(0);
