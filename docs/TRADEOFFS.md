@@ -81,7 +81,7 @@ The legacy fixture reproduces three of these on purpose: a readable rendered API
 ## Unresolved choices
 
 - Package and trademark availability for the `keyless` name, and the governance model.
-- Specification license: Community Specification License 1.0 or CC-BY 4.0 with a patent grant. The Rust package declares Apache-2.0 in `Cargo.toml`; the repository has no license text.
+- Specification license: Community Specification License 1.0 or CC-BY 4.0 with a patent grant. The code is licensed under Apache-2.0 ([LICENSE](../LICENSE)).
 - Exact secret floors, storage decomposition rules, supported-site list and narrowly scoped permits for read-over-POST applications.
 - A restricted mechanism for transferring session-only authentication state across the login tab swap.
 - Platform enforcement details for controlled browser trust stores, encrypted swap, ephemeral profiles and transport/firewall confinement.

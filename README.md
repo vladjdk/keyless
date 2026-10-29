@@ -25,7 +25,7 @@ Most of this README describes the design. The production broker (separate servic
 
 ## Run
 
-You need Rust and a Chrome or Chromium binary.
+You need Rust 1.88 or newer and a Chrome or Chromium binary.
 
 ```bash
 cargo build
@@ -124,4 +124,4 @@ docs/TRADEOFFS.md    Tradeoffs, missing pieces and verification gaps
 
 ## License
 
-`Cargo.toml` declares Apache-2.0, but there is no LICENSE file yet. The specification's license is still undecided (see [tradeoffs and gaps](docs/TRADEOFFS.md#unresolved-choices)).
+The code is licensed under the [Apache License 2.0](LICENSE). The specification's license is still undecided (see [tradeoffs and gaps](docs/TRADEOFFS.md#unresolved-choices)).
