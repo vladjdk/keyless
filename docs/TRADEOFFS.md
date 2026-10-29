@@ -34,9 +34,13 @@ None of the following exists yet:
 - A complete normative specification with requirement IDs, negotiation rules, schemas, transition tables and a black-box conformance kit.
 - Production deny packs, reproducible signed releases and audited dependency attestations.
 
-The prototype covers a narrower version of login, filtering, policy and the hostile-site checks. The Rust port's results come from its own run (`spike/results-rust.json`), so the legacy numbers do not carry over.
+The prototype covers a narrower version of login, filtering, policy and the hostile-site checks. It also has the request gate (fixed patterns, an optional escalate-only Jev classifier and an owner approval hook) and a Development-profile MCP server for dogfooding; see [DOGFOOD.md](DOGFOOD.md). The Rust port's results come from its own run (`spike/results-rust.json`), so the legacy numbers do not carry over.
 
 ## Verification gaps
+
+- The Jev classifier has not been run against the live API here; only its request format and response handling are tested against a local stand-in. `jev-eval` measures it once a key is available. Published third-party tests put its prompt-injection recall between about 63% and 83%, so it is a second opinion, not a gate on its own.
+- Gate patterns are English path, field and label words. They miss state changes hidden in GraphQL or RPC bodies (`POST /graphql`), non-English labels and state-changing GETs with neutral names (the fixture's `/prefs/sync` passes without a classifier).
+- New-token withholding only runs on pages whose path falls into a credential, authorization or account-security category. A token shown in a modal on `/` or on a neutral path reaches the agent.
 
 - No independent security audit has been performed.
 - [spike/results.json](../spike/results.json) is from the legacy JavaScript prototype and says nothing about the Rust port.
@@ -81,7 +85,7 @@ The legacy fixture reproduces three of these on purpose: a readable rendered API
 ## Unresolved choices
 
 - Package and trademark availability for the `keyless` name, and the governance model.
-- Specification license: Community Specification License 1.0 or CC-BY 4.0 with a patent grant. The Rust package declares Apache-2.0 in `Cargo.toml`; the repository has no license text.
+- Specification license: Community Specification License 1.0 or CC-BY 4.0 with a patent grant. The code is licensed under Apache-2.0 ([LICENSE](../LICENSE)).
 - Exact secret floors, storage decomposition rules, supported-site list and narrowly scoped permits for read-over-POST applications.
 - A restricted mechanism for transferring session-only authentication state across the login tab swap.
 - Platform enforcement details for controlled browser trust stores, encrypted swap, ephemeral profiles and transport/firewall confinement.

@@ -9,8 +9,11 @@ impl Broker {
         let (input_read, input_write) = pipe()?;
         let (output_read, output_write) = pipe()?;
         let mut command = Command::new(&self.chrome);
+        // KEYLESS_HEADED shows the browser window, for watching a dogfood session. Development only.
+        if std::env::var_os("KEYLESS_HEADED").is_none() {
+            command.arg("--headless=new");
+        }
         command.args([
-            "--headless=new",
             "--remote-debugging-pipe",
             "--no-first-run",
             "--no-default-browser-check",

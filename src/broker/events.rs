@@ -8,35 +8,47 @@ impl Broker {
         let sealed = s.data.lock().unwrap().state == "sealed";
         match text(&event["method"]) {
             "Fetch.requestPaused" => {
-                let mut host = "?".to_owned();
-                let mut path = "?".to_owned();
-                let mut ok = false;
-                if let Ok(u) = Url::parse(text(&p["request"]["url"])) {
-                    host = u[url::Position::BeforeHost..url::Position::AfterPort].into();
-                    path = u.path().into();
-                    ok = self.permits(&u);
+                let req = &p["request"];
+                let kind = text(&p["resourceType"]);
+                let (state, clicked, title) = {
+                    let d = s.data.lock().unwrap();
+                    (d.state.clone(), d.clicked.clone(), d.title.clone())
+                };
+                let mut allowed = Url::parse(text(&req["url"])).is_ok_and(|u| self.permits(&u));
+                let summary = Summary::from_request(req, kind, &clicked, &title);
+                let method = text(&req["method"]);
+                if state == "active" && !s.cred.writes && !["GET", "HEAD"].contains(&method) {
+                    allowed = false;
                 }
-                let method = text(&p["request"]["method"]);
-                let state = s.data.lock().unwrap().state.clone();
-                if state == "active" && !["GET", "HEAD"].contains(&method) {
-                    ok = false;
+                // The gate applies once the session is the agent's. Login is the broker's own.
+                let ruling = match (&summary, state == "active") {
+                    (Some(sum), true) => self.gate.rule(sum, allowed).await,
+                    _ => gate::Ruling {
+                        permit: allowed,
+                        code: None,
+                        reason: None,
+                    },
+                };
+                if let Some(code) = ruling.code
+                    && state == "active"
+                {
+                    s.data.lock().unwrap().refusals.push(code);
                 }
                 {
                     let mut diag = self.diag.lock().unwrap();
-                    *diag
-                        .resource_types
-                        .entry(text(&p["resourceType"]).into())
-                        .or_default() += 1;
+                    *diag.resource_types.entry(kind.into()).or_default() += 1;
+                    let sum = summary.unwrap_or_default();
                     diag.audit.push(json!({
-                        "host": host,
-                        "path": path,
+                        "host": sum.origin,
+                        "path": sum.path,
                         "method": method,
-                        "type": p["resourceType"],
+                        "type": kind,
                         "state": state,
-                        "decision": if ok { "permit" } else { "forbid" },
+                        "decision": if ruling.permit { "permit" } else { "forbid" },
+                        "reason": ruling.reason,
                     }));
                 }
-                if ok {
+                if ruling.permit {
                     cdp.send(
                         "Fetch.continueRequest",
                         json!({"requestId":p["requestId"]}),

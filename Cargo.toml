@@ -2,6 +2,7 @@
 name = "keyless"
 version = "0.0.1"
 edition = "2024"
+rust-version = "1.88"
 license = "Apache-2.0"
 
 [dependencies]
@@ -9,7 +10,21 @@ base64 = "0.22"
 getrandom = "0.4"
 libc = "0.2"
 regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
 serde_json = "1"
 tempfile = "3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util"] }
 url = "2"
+
+[features]
+default = ["jev"]
+# The Jev classifier backend (HTTPS client). `--no-default-features` builds without it.
+jev = ["dep:reqwest"]
+
+[[bin]]
+name = "jev-eval"
+required-features = ["jev"]
+
+[[bin]]
+name = "keyless-mcp"
+required-features = ["jev"]

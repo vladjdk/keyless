@@ -25,7 +25,7 @@ Most of this README describes the design. The production broker (separate servic
 
 ## Run
 
-You need Rust and a Chrome or Chromium binary.
+You need Rust 1.88 or newer and a Chrome or Chromium binary.
 
 ```bash
 cargo build
@@ -33,6 +33,7 @@ cargo test
 cargo run --bin spike -- /path/to/chrome
 cargo run --bin diagrams
 cargo run --bin demo -- /path/to/chrome
+cargo run --bin jev-eval          # needs TYPESAFE_API_KEY
 ```
 
 `demo` serves a comparison page at http://localhost:8765/: a password filled into the page the agent shares, next to a sealed keyless session on the test site.
@@ -91,6 +92,19 @@ There is no script evaluation, raw HTML, attribute access, link targets, hidden 
 
 New credentials start on the `safe-methods` policy, which allows GET and HEAD only. Some sites change state on GET, so this cuts down writes rather than blocking them.
 
+## Request gate
+
+After login, every page load, form submission and API call the agent's page makes passes four layers. Only the first can allow a request; the others can only send it to you.
+
+1. **Hard rules:** the host allowlist, URL schemes and the method mode.
+2. **Patterns:** paths, form fields and button labels for API tokens, keys, OAuth consent, device sign-in, account security, forwarding, webhooks, exports and deletes.
+3. **Classifier (optional):** [Jev](https://docs.typesafe.ai) gets a summary built by the broker (method, URL shape, field names, the clicked label and the page title, never values) and can only flag a request. If it fails or times out, you get asked.
+4. **Owner:** you allow or block the request outside the agent's reach. With no way to ask, escalated requests are refused.
+
+The agent gets back `refused: ["needs_owner"]`. On credential and account pages, any new token-shaped value is withheld from what the agent sees, because the matcher doesn't know a token the site just created.
+
+To try it with a real agent, see [docs/DOGFOOD.md](docs/DOGFOOD.md).
+
 ## Security model
 
 We assume the agent is prompt-injected and will use every tool it has, including a shell running as its own user. In the production setup, no user the agent can act as is able to read the broker's memory or files, change its code or config, or drive the browser directly.
@@ -110,7 +124,7 @@ The full list is in [docs/TRADEOFFS.md](docs/TRADEOFFS.md), and engineering requ
 
 The [legacy JavaScript prototype](spike/RESULTS.md) passed 27 of 27 behavioural checks in both fixture configurations and leaked none of the 22 canaries it scanned for. The Rust port writes its own numbers to `spike/results-rust.json`.
 
-With browser request interception alone, the attacker server received 13 WebSocket upgrades and 16 TCP connections. Adding the egress proxy brought both to zero. The fixture also reproduces three of the known gaps above: a visible API token, a transformed cookie and a state-changing GET.
+With browser request interception alone, the attacker server received 13 WebSocket upgrades and 16 TCP connections. Adding the egress proxy brought both to zero. The fixture also reproduces three of the known gaps above: a visible API token, a transformed cookie and a state-changing GET. In the Rust run with the request gate, the token is withheld on an owner-approved token page and a "Confirm email" GET is stopped for the owner. A transformed cookie and a state-changing GET with a neutral name (`/prefs/sync`) still get through.
 
 Raw legacy numbers are in [spike/results.json](spike/results.json).
 
@@ -123,8 +137,10 @@ spike/               Fixture reports
 assets/              Logo, banners and diagrams
 docs/DESIGN.md       Production architecture and requirements
 docs/TRADEOFFS.md    Tradeoffs, missing pieces and verification gaps
+docs/DOGFOOD.md      Running keyless with a real agent against a local Gitea
+scripts/             Dogfood setup
 ```
 
 ## License
 
-`Cargo.toml` declares Apache-2.0, but there is no LICENSE file yet. The specification's license is still undecided (see [tradeoffs and gaps](docs/TRADEOFFS.md#unresolved-choices)).
+The code is licensed under the [Apache License 2.0](LICENSE). The specification's license is still undecided (see [tradeoffs and gaps](docs/TRADEOFFS.md#unresolved-choices)).

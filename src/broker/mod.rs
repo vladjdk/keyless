@@ -23,14 +23,21 @@ use url::Url;
 mod agent;
 mod browser;
 mod events;
+mod gate;
 mod login;
-#[derive(Clone)]
+pub use gate::{Approver, Boxed, Classifier, Gate, Summary, pattern};
+#[derive(Clone, Default)]
 pub struct Credential {
     pub username: String,
     pub password: String,
     pub login_url: String,
     pub post_login_url: String,
     pub success: Value,
+    /// CSS selector for the username field; `input[name=username]` when unset.
+    pub username_selector: Option<String>,
+    /// `false` is the `safe-methods` mode (GET and HEAD only). `true` lets other methods
+    /// through to the gate's patterns, classifier and owner.
+    pub writes: bool,
 }
 #[derive(Default)]
 pub struct Diagnostics {
@@ -64,7 +71,12 @@ struct SessionData {
     booted: bool,
     page: Option<Page>,
     snapshot: u64,
-    refs: BTreeMap<String, (u64, String)>,
+    refs: BTreeMap<String, (u64, String, String)>,
+    /// Label of the element the agent last clicked and the page title, as the agent saw them.
+    clicked: String,
+    title: String,
+    /// Refusal codes for requests the gate stopped since the agent's last action.
+    refusals: Vec<&'static str>,
 }
 struct Session {
     cred: Credential,
@@ -75,6 +87,7 @@ pub struct Broker {
     creds: BTreeMap<String, Credential>,
     allowed: BTreeSet<String>,
     proxy: Option<u16>,
+    gate: Gate,
     sessions: Mutex<BTreeMap<String, Arc<Session>>>,
     suspended: AtomicBool,
     pub tap: Mutex<Vec<String>>,
@@ -87,11 +100,21 @@ impl Broker {
         allowed: BTreeSet<String>,
         proxy: Option<u16>,
     ) -> Arc<Self> {
+        Self::with_gate(chrome, creds, allowed, proxy, Gate::default())
+    }
+    pub fn with_gate(
+        chrome: String,
+        creds: BTreeMap<String, Credential>,
+        allowed: BTreeSet<String>,
+        proxy: Option<u16>,
+        gate: Gate,
+    ) -> Arc<Self> {
         Arc::new(Self {
             chrome,
             creds,
             allowed,
             proxy,
+            gate,
             sessions: Mutex::new(BTreeMap::new()),
             suspended: AtomicBool::new(false),
             tap: Mutex::new(vec![]),
@@ -156,6 +179,9 @@ impl Broker {
                     page: None,
                     snapshot: 0,
                     refs: BTreeMap::new(),
+                    clicked: String::new(),
+                    title: String::new(),
+                    refusals: vec![],
                 }),
             });
             self.sessions
