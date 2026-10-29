@@ -32,8 +32,11 @@ cargo build
 cargo test
 cargo run --bin spike -- /path/to/chrome
 cargo run --bin diagrams
+cargo run --bin demo -- /path/to/chrome
 cargo run --bin jev-eval          # needs TYPESAFE_API_KEY
 ```
+
+`demo` serves a comparison page at http://localhost:8765/: a password filled into the page the agent shares, next to a sealed keyless session on the test site.
 
 `spike` runs the hostile-site fixture and writes its results to `spike/results-rust.json`. `diagrams` regenerates the SVGs in `assets/`.
 

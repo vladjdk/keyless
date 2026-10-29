@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>keyless demo</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0D1014; --bar: #090B0E; --line: #1F242C; --surface: #12161C;
+  --ink: #E6EDF3; --dim: #8B949E; --faint: #6E7681;
+  --red: #FF7B72; --red-ink: #FFA198; --red-bg: #4C1D1D;
+  --green: #7EE787; --green-bg: #12361F;
+  --grey-ink: #C9D1D9; --grey-bg: #262C36;
+  --violet: #D2A8FF; --blue: #A5D6FF;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 'JetBrains Mono', ui-monospace, monospace; }
+main { max-width: 1320px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; min-height: 100vh; }
+button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 0 16px; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+button:disabled { opacity: 0.5; cursor: progress; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.modes { display: flex; padding: 4px; gap: 4px; background: var(--bar); border: 1px solid var(--line); border-radius: 10px; }
+.modes button { border: 0; background: transparent; color: var(--dim); }
+.modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); }
+.modes button[aria-pressed="true"].fill { box-shadow: inset 0 -2px 0 var(--red); }
+.modes button[aria-pressed="true"].kl { box-shadow: inset 0 -2px 0 var(--green); }
+.run { background: var(--ink); color: var(--bg); border: 0; font-weight: 700; }
+.stage { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; }
+
+/* Browser window */
+.win { flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; min-height: 520px; }
+.chrome { background: var(--bar); border-bottom: 1px solid var(--line); padding: 10px 14px; display: flex; align-items: center; gap: 14px; }
+.dots { display: flex; gap: 8px; }
+.dots span { width: 12px; height: 12px; border-radius: 50%; background: #30363D; }
+.url { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; color: var(--dim); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 8px; align-items: center; }
+.url b { color: var(--ink); font-weight: 500; }
+.view { flex: 1; position: relative; display: flex; }
+iframe { flex: 1; border: 0; width: 100%; min-height: 460px; background: #fff; }
+.sealed, .snap { position: absolute; inset: 0; background: var(--bg); display: flex; }
+.sealed { flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--dim); }
+.sealed strong { color: var(--ink); font-size: 28px; }
+.snap { flex-direction: column; padding: 20px 24px; gap: 2px; overflow: auto; font-size: 14px; }
+.snap .role { color: var(--violet); }
+.snap .name { color: var(--blue); }
+
+/* Agent panel */
+.agent { flex: 1 1 380px; max-width: 480px; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bar); }
+.agent header { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); }
+.busy .pulse { background: var(--blue); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .busy .pulse { animation: none; } }
+.log { flex: 1; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; overflow: auto; min-height: 300px; }
+.log .empty { color: var(--faint); }
+.call { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.call .head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.call .fn { color: var(--ink); }
+.call .fn i { font-style: normal; color: var(--violet); }
+.call .out { color: var(--dim); font-size: 13px; overflow-wrap: anywhere; }
+.call.exposed .out { color: var(--red-ink); }
+.call.visible .out { color: var(--green); }
+.event { color: var(--faint); font-size: 13px; padding: 2px 2px; }
+.tag { flex: none; font-size: 12px; padding: 2px 8px; border-radius: 6px; }
+.tag.exposed { background: var(--red-bg); color: var(--red-ink); }
+.tag.refused { background: var(--grey-bg); color: var(--grey-ink); }
+.tag.visible { background: var(--green-bg); color: var(--green); }
+.tally { padding: 18px; border-top: 1px solid var(--line); font-size: 30px; font-weight: 700; min-height: 84px; display: flex; flex-direction: column; justify-content: center; }
+.tally small { font-size: 13px; font-weight: 400; color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div class="modes" role="group" aria-label="Mode">
+      <button type="button" class="fill" id="m-fill" aria-pressed="true">fill into the page</button>
+      <button type="button" class="kl" id="m-kl" aria-pressed="false">keyless</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="button" id="reset">reset</button>
+      <button type="button" class="run" id="run">▶ run</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section class="win" aria-label="Browser">
+      <div class="chrome">
+        <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="url" id="url"><span id="url-text">localhost:8765/baseline/login</span></div>
+      </div>
+      <div class="view">
+        <iframe id="frame" src="/baseline/logout" title="Test site"></iframe>
+        <div class="sealed" id="sealed" hidden>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          <strong id="sealed-title">sealed</strong>
+          <span id="sealed-sub">broker's browser · agent has no access</span>
+        </div>
+        <div class="snap" id="snap" hidden aria-label="What the agent sees"></div>
+      </div>
+    </section>
+
+    <section class="agent" id="agent" aria-label="Agent">
+      <header><span class="pulse" aria-hidden="true"></span><span>agent</span></header>
+      <div class="log" id="log" aria-live="polite"><span class="empty">▶ run</span></div>
+      <div class="tally" id="tally" aria-live="polite"></div>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const frame = $('frame');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pause = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+const READS = [
+  { fn: 'password.value', code: "document.querySelector('input[type=password]')?.value ?? ''" },
+  { fn: 'document.cookie', code: 'document.cookie' },
+  { fn: 'localStorage.auth', code: "localStorage.getItem('auth') ?? ''" },
+  { fn: 'input[type=hidden]', code: "[...document.querySelectorAll('input[type=hidden]')].map(i => i.name + '=' + i.value).join(' ')" },
+];
+let mode = 'fill';
+let session = null;
+
+async function getJSON(url, body) {
+  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  return r.json();
+}
+const broker = (method, params) => getJSON('/api/broker', { method, params: Object.assign({ session }, params || {}) });
+const clip = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
+
+function event(text) {
+  const d = document.createElement('div');
+  d.className = 'event';
+  d.textContent = text;
+  add(d);
+}
+function call(fn, out, kind) {
+  const d = document.createElement('div');
+  d.className = 'call ' + kind;
+  const head = document.createElement('div');
+  head.className = 'head';
+  const f = document.createElement('span');
+  f.className = 'fn';
+  const verb = document.createElement('i');
+  verb.textContent = fn.verb;
+  f.append(verb, document.createTextNode(fn.arg ? '(' + fn.arg + ')' : '()'));
+  const tag = document.createElement('span');
+  tag.className = 'tag ' + kind;
+  tag.textContent = kind;
+  head.append(f, tag);
+  const o = document.createElement('div');
+  o.className = 'out';
+  o.textContent = '→ ' + out;
+  d.append(head, o);
+  add(d);
+}
+function add(el) {
+  const log = $('log');
+  log.querySelector('.empty')?.remove();
+  log.append(el);
+  log.scrollTop = log.scrollHeight;
+}
+function setUrl(text) { $('url-text').textContent = text; }
+function tally(ok, text, sub) {
+  const t = $('tally');
+  t.replaceChildren(document.createTextNode((ok ? '✓ ' : '✗ ') + text));
+  t.style.color = ok ? 'var(--green)' : 'var(--red)';
+  if (sub) { const s = document.createElement('small'); s.textContent = sub; t.append(s); }
+}
+
+function reset() {
+  $('log').innerHTML = '<span class="empty">▶ run</span>';
+  $('tally').replaceChildren();
+  $('snap').hidden = true;
+  if (mode === 'fill') {
+    try { localStorage.removeItem('auth'); } catch (e) {}
+    $('sealed').hidden = true;
+    frame.hidden = false;
+    frame.src = '/baseline/logout';
+  } else {
+    frame.hidden = true;
+    $('sealed').hidden = false;
+    $('sealed-title').textContent = 'no session';
+    $('sealed-sub').textContent = "broker's browser · agent has no access";
+    setUrl('keyless · broker session');
+  }
+}
+frame.addEventListener('load', () => {
+  if (mode === 'fill') setUrl(frame.contentWindow.location.host + frame.contentWindow.location.pathname);
+});
+const loaded = () => new Promise((r) => frame.addEventListener('load', r, { once: true }));
+
+async function runFill() {
+  const doc = frame.contentDocument;
+  const v = await getJSON('/baseline/vault');
+  for (const [el, val] of [[doc.querySelector('input[name=username]'), v.username], [doc.querySelector('input[type=password]'), v.password]]) {
+    el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  event('password manager filled the form');
+  await pause(900);
+  const hits = new Set();
+  const read = async (r) => {
+    const secrets = Object.values(await getJSON('/baseline/secrets')).filter((s) => typeof s === 'string' && s.length >= 8);
+    let out;
+    try { out = String(frame.contentWindow.eval(r.code) ?? ''); } catch (e) { out = e.message; }
+    const hit = secrets.find((s) => out.includes(s));
+    if (hit) hits.add(hit);
+    call({ verb: 'js', arg: r.fn }, out ? clip(out, 60) : '""', hit ? 'exposed' : 'refused');
+    await pause(700);
+  };
+  await read(READS[0]);
+  const done = loaded();
+  frame.contentDocument.querySelector('form').submit();
+  await done;
+  event('signed in');
+  await pause(700);
+  for (const r of READS.slice(1)) await read(r);
+  tally(false, `${hits.size} secrets exposed`);
+}
+
+async function runKeyless() {
+  const o = await getJSON('/api/broker', { method: 'session.open' });
+  session = o.session;
+  $('sealed-title').textContent = 'sealed';
+  $('sealed-sub').textContent = 'broker is signing in';
+  event('broker signing in');
+  const early = await broker('session.observe');
+  call({ verb: 'observe' }, early.error ? early.error.code : 'ok', early.error ? 'refused' : 'visible');
+  for (let i = 0; i < 100; i++) {
+    await pause(300);
+    const st = await broker('session.status');
+    if (!['opening', 'sealed'].includes(st.state)) break;
+  }
+  event('signed in');
+  const obs = await broker('session.observe');
+  if (!obs.error) {
+    const items = obs.items || [];
+    $('sealed').hidden = true;
+    const snap = $('snap');
+    snap.replaceChildren(...items.filter((i) => i.name.trim()).map((i) => {
+      const d = document.createElement('div');
+      const role = document.createElement('span');
+      role.className = 'role';
+      role.textContent = i.role + ' ';
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = JSON.stringify(i.name);
+      d.append(role, name);
+      return d;
+    }));
+    snap.hidden = false;
+    setUrl('agent view · ' + obs.url.replace(/^https?:\/\//, ''));
+    call({ verb: 'observe' }, `${items.length} items`, 'visible');
+  } else {
+    call({ verb: 'observe' }, obs.error.code, 'refused');
+  }
+  await pause(700);
+  for (const r of READS) {
+    const res = await broker('session.act', { action: 'eval', script: r.code });
+    call({ verb: 'js', arg: r.fn }, res.error ? res.error.code : JSON.stringify(res), res.error ? 'refused' : 'exposed');
+    await pause(500);
+  }
+  const s = await getJSON('/api/keyless/scan');
+  tally(s.leaks.length === 0, `${s.leaks.length} secrets exposed`, `${s.canaries} test values · ${s.messages} replies scanned`);
+}
+
+function setMode(m) {
+  mode = m;
+  $('m-fill').setAttribute('aria-pressed', m === 'fill');
+  $('m-kl').setAttribute('aria-pressed', m === 'keyless');
+  reset();
+}
+$('m-fill').onclick = () => setMode('fill');
+$('m-kl').onclick = () => setMode('keyless');
+$('reset').onclick = reset;
+$('run').onclick = async () => {
+  const btns = document.querySelectorAll('button');
+  btns.forEach((b) => (b.disabled = true));
+  $('agent').classList.add('busy');
+  reset();
+  if (mode === 'fill') await loaded();
+  try { mode === 'fill' ? await runFill() : await runKeyless(); }
+  catch (e) { event('error: ' + e.message); }
+  finally {
+    btns.forEach((b) => (b.disabled = false));
+    $('agent').classList.remove('busy');
+  }
+};
+</script>
+</body>
+</html>

@@ -187,6 +187,10 @@ impl Broker {
     async fn act_inner(&self, s: &Session, sid: &str, p: &Value) -> Result<Value> {
         let sid = sid.to_owned();
         let action = text(&p["action"]);
+        // Refuse anything outside the action set before looking at refs.
+        if !["navigate", "key", "click", "type"].contains(&action) {
+            return Err(Error::policy("unknown_method"));
+        }
         if action == "navigate" {
             let u = Url::parse(text(&p["url"]))
                 .ok()

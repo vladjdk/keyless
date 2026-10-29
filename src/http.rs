@@ -167,11 +167,24 @@ impl Server {
     ) -> io::Result<Self> {
         Self::start_with_connection(handler, || {})
     }
+    /// Like `start`, on a fixed loopback port (0 picks a free one).
+    pub fn start_at(
+        port: u16,
+        handler: impl Fn(Request, &mut TcpStream) + Send + Sync + 'static,
+    ) -> io::Result<Self> {
+        Self::listen(TcpListener::bind(("127.0.0.1", port))?, handler, || {})
+    }
     pub fn start_with_connection(
         handler: impl Fn(Request, &mut TcpStream) + Send + Sync + 'static,
         connected: impl Fn() + Send + Sync + 'static,
     ) -> io::Result<Self> {
-        let listener = TcpListener::bind("127.0.0.1:0")?;
+        Self::listen(TcpListener::bind("127.0.0.1:0")?, handler, connected)
+    }
+    fn listen(
+        listener: TcpListener,
+        handler: impl Fn(Request, &mut TcpStream) + Send + Sync + 'static,
+        connected: impl Fn() + Send + Sync + 'static,
+    ) -> io::Result<Self> {
         let port = listener.local_addr()?.port();
         listener.set_nonblocking(true)?;
         let stop = Arc::new(AtomicBool::new(false));
