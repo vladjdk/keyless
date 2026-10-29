@@ -151,6 +151,8 @@ async fn run() -> std::io::Result<()> {
             login_url: format!("{origin}/login"),
             post_login_url: format!("{origin}/app"),
             success: json!({"path":"/app"}),
+            username_selector: None,
+            writes: false,
         },
     )]);
     let broker = Broker::new(chrome, creds, allowed, Some(proxy.server.port));
